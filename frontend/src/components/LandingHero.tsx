@@ -53,6 +53,21 @@ function shuffleWithSeed<T>(items: readonly T[], seed: number): T[] {
   return result;
 }
 
+/** Keep SPA-entry performance predictable: prefer a responsive hosted AVIF for
+ * the first slide, then retain the shuffled curated reel behind it. */
+export function orderLandingHeroSlides(
+  slides: readonly Spot[],
+  seed: number,
+): Spot[] {
+  if (slides.length <= 1) return [...slides];
+  const fastFirst = slides.filter(
+    (spot) => spot.heroDelivery !== "hotlinked" && hasResponsiveHeroDelivery(spot),
+  );
+  if (fastFirst.length === 0) return shuffleWithSeed(slides, seed);
+  const first = fastFirst[0];
+  return [first, ...shuffleWithSeed(slides.filter((spot) => spot.id !== first.id), seed)];
+}
+
 /** The admin selection is authoritative: unselected hero images must never
  * leak into the landing reel, including when the selection is empty. */
 export function selectLandingHeroSlides(spots: Spot[]): Spot[] {
@@ -86,6 +101,7 @@ export function hasResponsiveHeroDelivery(spot: Spot): boolean {
  * image (e.g. a fresh seed database or an intentionally empty selection).
  */
 export default function LandingHero({ spots }: { spots: Spot[] }) {
+  const [hasBootHero] = useState(() => Boolean(document.getElementById("landing-boot-hero")));
   const [reduce, setReduce] = useState(false);
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -122,7 +138,7 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
 
   const slides = useMemo(() => {
     const source = liveSlides.length > 0 ? liveSlides : cachedSlidesRef.current!;
-    return shuffleWithSeed(source, seed);
+    return orderLandingHeroSlides(source, seed);
   }, [liveSlides, seed]);
   const count = slides.length;
   const [index, setIndex] = useState(0);
@@ -156,6 +172,15 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
     );
     return () => window.clearInterval(timer);
   }, [reduce, count]);
+
+  if (hasBootHero) {
+    return (
+      <>
+        <HeaderWash />
+        <HeroSpotLink to="/spot/baleal" label="Zum Spot Baleal" />
+      </>
+    );
+  }
 
   if (count === 0) {
     // While the catalogue loads (and for a deliberately empty selection) show a
@@ -223,18 +248,24 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
       {/* CTA — a small frosted map-pin button that links to the spot on screen.
           No visible name (the spot name stays as the accessible label); just the
           pin, aligned to the same content column as the header. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-12 z-20 sm:bottom-16">
-        <div className="mx-auto flex max-w-page px-4 sm:px-10">
-          <Link
-            to={spotPath(current)}
-            aria-label={`Zum Spot ${current.name}`}
-            className="pointer-events-auto grid h-8 w-8 place-items-center rounded-full border border-white/25 bg-black/55 text-white shadow-float transition-colors hover:bg-black/65 active:scale-[0.97] sm:bg-black/25 sm:backdrop-blur-md sm:hover:bg-black/35"
-          >
-            <PinIcon className="text-ui" />
-          </Link>
-        </div>
-      </div>
+      <HeroSpotLink to={spotPath(current)} label={`Zum Spot ${current.name}`} />
     </>
+  );
+}
+
+function HeroSpotLink({ to, label }: { to: string; label: string }) {
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-12 z-20 sm:bottom-16">
+      <div className="mx-auto flex max-w-page px-4 sm:px-10">
+        <Link
+          to={to}
+          aria-label={label}
+          className="pointer-events-auto grid h-8 w-8 place-items-center rounded-full border border-white/25 bg-black/55 text-white shadow-float transition-colors hover:bg-black/65 active:scale-[0.97] sm:bg-black/25 sm:backdrop-blur-md sm:hover:bg-black/35"
+        >
+          <PinIcon className="text-ui" />
+        </Link>
+      </div>
+    </div>
   );
 }
 

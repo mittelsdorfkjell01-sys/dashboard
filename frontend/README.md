@@ -1,40 +1,46 @@
-# SpotInfo — Frontend
+# Surfwinddata frontend
 
-React + Vite + TypeScript + Tailwind UI for the Surfwinddate ("SpotInfo") platform.
-Two screens are implemented so far, built to match the design mockups:
+React, Vite, TypeScript and Tailwind frontend for the public Surfwinddata site
+and the separately deployed administration dashboard. The UI consumes the
+FastAPI routes from this repository; catalogue, search and map data are not
+local placeholders.
 
-- **`/` — Landing** (`src/pages/Landing.tsx`): hero + `WO? / WANN?` search card, then the
-  "Top Spots" grid of spot cards.
-- **`/map` — Map** (`src/pages/MapView.tsx`): full-screen Leaflet/OpenStreetMap with navy
-  spot pins, an open preview popup, and a recommended-spots strip along the bottom.
+## Applications and routes
 
-The Wind / Welle / Wave toggle (centre of the header) is a three-position vertical switch:
-`Welle` (wave), `Wind`, and `Wave` in the middle for spots that suit **both**.
+- Public: landing page, search, spot and region details, maps, community and
+  account routes.
+- Admin: editorial workflows and operational tools below `/admin`.
+- The public production bundle excludes admin code unless
+  `VITE_INCLUDE_ADMIN=true`; see `../DEPLOY-VERCEL.md`.
 
-## Placeholder data
-
-Spot names, tags and images are **placeholders** (`src/data/spots.ts`) — image URLs use
-`picsum.photos` and require network access to render. Wiring these to the backend
-(`/search/best-spots`, `/map`) is a later step.
+Wind, wave and tide forecast surfaces are under active development. Preserve
+their source, units, timestamps and uncertainty states when changing adjacent
+UI code.
 
 ## Commands
 
 ```bash
 npm install
-npm run dev      # dev server on http://localhost:5173
-npm run build    # type-check + production build to dist/
-npm run preview  # serve the production build
+npm run dev
+npm run lint
+npm run test
+npm run build
 ```
 
-## Structure
+The development server defaults to `http://localhost:5173` and proxies API
+requests to the local FastAPI service. Build and test scripts are defined in
+`package.json`.
+
+## Main entry points
 
 ```
-src/
-  main.tsx              # router (/, /map)
-  pages/                # Landing, MapView
-  components/           # Header, SportToggle, SearchBar, SpotCard, MapSpotCard, ViewToggle, SpotBits
-  lib/icons.tsx         # inline line icons
-  data/spots.ts         # placeholder spots
+src/main.tsx              public/admin router bootstrap
+src/pages/                route-level screens
+src/components/           reusable public and admin UI
+src/lib/api.ts            typed API client contracts
+src/weather-map/          forecast map and overlays
+e2e/                      Playwright user-flow checks
 ```
 
-Design tokens (navy, brand-green, muted, line + Poppins) live in `tailwind.config.js`.
+Reuse the design tokens in `tailwind.config.js` and `src/index.css` instead of
+introducing route-local colors or spacing scales.

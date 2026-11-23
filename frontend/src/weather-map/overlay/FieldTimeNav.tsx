@@ -95,6 +95,11 @@ export function hourMarks(from: number, to: number, nowAt: number): Array<{ at: 
  * published hours is interpolated, so there is nothing to snap to. The days
  * themselves are switched with the two small chevrons beside the date, today
  * plus four.
+ *
+ * It rides in the map's bottom dock (`.swd-wx-dock`), directly above the
+ * forecast sheet, so neither has to know the other's height. Type comes from
+ * the house classes here; weather-map.css only places it and styles the parts
+ * of a range input that CSS alone can reach.
  */
 export default function FieldTimeNav({
   value,
@@ -133,16 +138,16 @@ export default function FieldTimeNav({
         <button type="button" aria-label="Vorheriger Tag" disabled={dayIndex <= 0} onClick={() => goToDay(dayIndex - 1)}>
           <ChevronLeftIcon className="text-ui" />
         </button>
-        <p className="swd-wx-time-value">
+        <p className="swd-wx-time-value text-caption text-muted">
           <span>{today ? "Heute" : DAY.format(new Date(value)).replace(".", "")}</span>
           {" "}
-          <strong>{TIME.format(new Date(value))}</strong>
+          <strong className="font-semibold text-ink">{TIME.format(new Date(value))}</strong>
         </p>
         <button type="button" aria-label="Nächster Tag" disabled={dayIndex >= days.length - 1} onClick={() => goToDay(dayIndex + 1)}>
           <ChevronRightIcon className="text-ui" />
         </button>
         {Math.abs(value - nowAt) > 60_000 && (
-          <button type="button" className="swd-wx-time-now" onClick={() => onChange(nowAt)}>Jetzt</button>
+          <button type="button" className="swd-wx-time-now text-caption font-medium text-accent" onClick={() => onChange(nowAt)}>Jetzt</button>
         )}
       </div>
       <input
@@ -158,7 +163,11 @@ export default function FieldTimeNav({
         onChange={(event) => onChange(Math.round(Number(event.target.value)))}
       />
       <div className="swd-wx-time-marks" aria-hidden="true">
-        {marks.map((mark) => <span key={mark.at} style={{ left: `${mark.offset * 100}%` }}>{mark.label}</span>)}
+        {marks.map((mark) => (
+          <span key={mark.at} className="text-micro font-medium text-muted" style={{ left: `${mark.offset * 100}%` }}>
+            {mark.label}
+          </span>
+        ))}
       </div>
     </section>
   );

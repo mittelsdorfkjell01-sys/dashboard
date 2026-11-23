@@ -19,10 +19,11 @@ export const en = {
     spots: "The spots", noSpots: "No spots match this selection.", map: "On the map", similar: "Similar regions",
   },
   dataHelp: { label: "Open explanation", suffix: "More under Data & questions" },
-  recommendations: { limits: "Catalogue selection for orientation. Forecasts are model values, not guarantees; source and update time are shown with the weather data.", currentTitle: "Spot selection", nextWeekTitle: "Save for next week", seasonTitle: "Seasonal spot selection", allSpots: "Discover all spots", map: "Map" },
+  recommendations: { currentTitle: "Spot selection", nextWeekTitle: "Save for next week", seasonTitle: "Seasonal spot selection", allSpots: "Discover all spots", map: "Map" },
   // Mirrors the German `help` namespace key for key — see locales/de.ts.
   help: {
     title: "Data & questions",
+    back: "Back",
     lede: "Where the data comes from, where its limits are, how your account and contributions work – and how to reach the operator.",
     jump: {
       label: "On this page",
@@ -34,7 +35,9 @@ export const en = {
       map: "Map",
       account: "Account",
       contribute: "Contribute",
-      contact: "Contact",
+      menu: "Sections",
+      menuOpen: "Open section menu",
+      close: "Close",
     },
     section: {
       safety: "Safety",
@@ -329,8 +332,22 @@ export const en = {
   accountNav: { profile: "Profile", setup: "My setup", saved: "Saved", visited: "Spots visited", trips: "Trip planner", addSpots: "Add spots", settings: "Settings" },
   menu: {
     trigger: "Account menu", account: "Account", close: "Close menu", areas: "Account sections",
-    myProfile: "My profile", welcome: "Welcome", welcomeBody: "Sign in to manage favourites and your own spots.",
-    signIn: "Sign in", createAccount: "Create account", planned: "Planned", signOut: "Sign out", signOutSheet: "sign out",
+    myProfile: "My profile",
+    signIn: "Sign in", planned: "Planned", signOut: "Sign out", explore: "Explore", suggestSpot: "Suggest a spot",
+    search: {
+      label: "Search the menu", clear: "Clear search", results: "Results",
+      empty: "Nothing found for “{{query}}”.", feature: "Feature", page: "Page", map: "Wind map",
+      keywords: {
+        profile: "account name avatar",
+        setup: "gear quiver board kite sail wing foil",
+        saved: "favourites favorites bookmarks",
+        trips: "trip travel plan holiday",
+        addSpots: "suggest spot new community",
+        settings: "units knots beaufort metres feet temperature password email delete account export",
+        map: "map wind flow particles",
+        contact: "email write report error",
+      },
+    },
   },
   settings: {
     pageTitle: "Settings", planned: "Planned",

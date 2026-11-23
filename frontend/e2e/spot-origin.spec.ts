@@ -46,7 +46,7 @@ const mark = (page: Page) => page.getByRole("img", { name: "Von der Redaktion er
 test("no spot carries the origin mark while the catalogue is all ours", async ({ page }) => {
   await mockCatalogue(page, false);
   await page.goto("/");
-  await expect(page.locator("span.truncate", { hasText: /^Spot 1$/ }).first()).toBeVisible();
+  await expect(page.getByText("Spot 1", { exact: true }).first()).toBeVisible();
   await expect(mark(page)).toHaveCount(0);
 });
 

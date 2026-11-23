@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import * as maplibregl from "maplibre-gl";
+import "../lib/maplibreWorker";
 import type { ExpressionSpecification, GeoJSONSource, Map as MapLibreMap, MapMouseEvent, StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { CARTO_ATTRIBUTION, CARTO_POSITRON_NOLABELS, CARTO_VOYAGER_LABELS, cartoTileUrl, prefersRetinaTiles } from "../lib/basemaps";

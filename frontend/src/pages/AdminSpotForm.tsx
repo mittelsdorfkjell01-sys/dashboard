@@ -73,6 +73,7 @@ import {
   parseDuplicateConflict,
   type DuplicateConflict,
 } from "../lib/duplicateConflicts";
+import { useAdminRealtimeRefresh } from "../context/AdminRealtimeContext";
 import { spotPath } from "../lib/spotRoutes";
 
 type Availability = "yes" | "no" | "unknown";
@@ -236,6 +237,8 @@ export default function AdminSpotForm() {
     license: attrLicense,
     source: attrSource,
   });
+  const mainDirty = !captureMainBaseline && mainBaseline !== null && mainFormValue !== mainBaseline;
+  const attributionDirty = attributionValue !== attributionBaseline;
 
   useEffect(() => {
     if (!captureMainBaseline) return;
@@ -244,15 +247,12 @@ export default function AdminSpotForm() {
   }, [captureMainBaseline, mainFormValue]);
 
   useEffect(() => {
-    setDirty(
-      "main",
-      !captureMainBaseline && mainBaseline !== null && mainFormValue !== mainBaseline
-    );
-  }, [captureMainBaseline, mainBaseline, mainFormValue, setDirty]);
+    setDirty("main", mainDirty);
+  }, [mainDirty, setDirty]);
 
   useEffect(() => {
-    setDirty("attribution", attributionValue !== attributionBaseline);
-  }, [attributionBaseline, attributionValue, setDirty]);
+    setDirty("attribution", attributionDirty);
+  }, [attributionDirty, setDirty]);
 
   const focusGap = (gap: string) => {
     const el = document.getElementById(gapAnchor(gap));
@@ -381,6 +381,19 @@ export default function AdminSpotForm() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  useAdminRealtimeRefresh(async () => {
+    if (!id) return;
+    try {
+      applySpot(await getAdminSpot(id));
+      markClean();
+      setGalleryVersion((version) => version + 1);
+      setError(null);
+    } catch (reason) {
+      setError(reason instanceof ApiError ? reason.message : "Live-Aktualisierung fehlgeschlagen.");
+    }
+  }, Boolean(id) && !loadingExisting && !mainDirty && !attributionDirty && !submitting
+    && pickerOpen === null && duplicateConflict === null && !pendingDelete && !deleting && !attrBusy);
 
   useEffect(() => {
     if (loadingExisting || !location.hash) return;

@@ -39,6 +39,19 @@ def test_seed_is_idempotent(db):
     assert before == after
 
 
+def test_europe_seed_spots_are_world_class(db):
+    from app.seed.data_europe import SPOTS as EUROPE_SPOTS
+
+    seed(db, include_europe=True)
+    slugs = [spot["slug"] for spot in EUROPE_SPOTS]
+    classifications = db.execute(
+        select(Spot.slug, Spot.editorial_classification).where(Spot.slug.in_(slugs))
+    ).all()
+
+    assert len(classifications) == len(slugs)
+    assert {classification for _, classification in classifications} == {"world_class"}
+
+
 def test_spot_linked_to_region(db):
     spot = db.scalar(select(Spot).where(Spot.slug == "tarifa-los-lances"))
     assert spot is not None

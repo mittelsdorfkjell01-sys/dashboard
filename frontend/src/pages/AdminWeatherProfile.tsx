@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { activateAdminWeatherSectors, ApiError, getAdminForecastJob, getAdminWeatherDiagnostics, getAdminWeatherProfile, putAdminWeatherProfile, recalculateAdminForecast, type ForecastJob, type WeatherProfileInput, type WeatherReferencePoint, type WeatherSector } from "../lib/api";
 import { useUnsavedChangesGuard } from "../lib/useUnsavedChangesGuard";
 import UnsavedChangesDialog from "../components/admin/UnsavedChangesDialog";
+import { useAdminRealtimeRefresh } from "../context/AdminRealtimeContext";
 
 const empty: WeatherProfileInput = { timezone: null, elevation_m: null, coastal_normal_deg: null, exposure: null, roughness_length_m: null, land_reference: null, water_reference: null, quality_tier: "coordinates", physics_version: "wind-v1", active: true, sectors: [] };
 const inputCls = "mt-1 h-10 w-full rounded-md border border-admin-border-strong bg-admin-surface px-3 text-ui text-admin-fg";
@@ -47,6 +48,7 @@ export default function AdminWeatherProfile() {
     setForm(next); setBaseline(JSON.stringify(next)); markClean("weather");
   }).catch((e) => { if (e instanceof ApiError && e.status === 404) { setForm(empty); setBaseline(JSON.stringify(empty)); } else setMessage(e instanceof ApiError ? e.message : "Profil konnte nicht geladen werden."); }).finally(() => setLoading(false)); }, [spotId, markClean]);
   useEffect(() => load(), [load]);
+  useAdminRealtimeRefresh(load, !dirty && !saving && !activating);
   const sectorOverlap = useMemo(() => form.sectors.some((a,i) => a.enabled && form.sectors.slice(i+1).some((b) => b.enabled && weatherSectorsOverlap(a,b))), [form.sectors]);
   const save = async () => { setSaving(true); setMessage(null); setErrors({}); try { const saved = await putAdminWeatherProfile(spotId, form); const next = { ...saved, expected_updated_at: saved.updated_at }; setForm(next); setBaseline(JSON.stringify(next)); markClean("weather"); setMessage("Wetterprofil gespeichert."); } catch (e) { if (e instanceof ApiError) { const d = (e.detail as {detail?: unknown})?.detail; if (d && typeof d === "object") setErrors(d as Record<string,string>); else setMessage(e.message); } else setMessage("Speichern fehlgeschlagen."); } finally { setSaving(false); } };
   const runDiagnostics = () => { setDiag(null); setMessage(null); getAdminWeatherDiagnostics(spotId).then(setDiag).catch((e) => setMessage(e instanceof ApiError ? e.message : "Diagnostik fehlgeschlagen.")); };

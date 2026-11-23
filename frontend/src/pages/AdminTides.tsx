@@ -9,6 +9,7 @@ import { Badge, PageHeader, SearchInput, type BadgeTone } from "../components/ad
 import { countryName } from "../lib/flags";
 import Modal from "../components/ui/Modal";
 import TideAdminPanel from "../components/admin/TideAdminPanel";
+import { useAdminRealtimeRefresh } from "../context/AdminRealtimeContext";
 
 /**
  * Europe rollout queue: only published marine spots, ordered into explicit
@@ -32,6 +33,7 @@ export default function AdminTides() {
   }, []);
 
   useEffect(() => { void reload(); }, [reload]);
+  useAdminRealtimeRefresh(reload, active === null);
 
   const filtered = useMemo(() => items.filter((item) => {
     const needle = q.trim().toLowerCase();

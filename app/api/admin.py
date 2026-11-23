@@ -28,6 +28,7 @@ from app.admin import notifications as admin_notifications
 from app.admin import regions as admin_regions
 from app.admin import spots as admin_spots
 from app.admin import team as admin_team
+from app.admin.realtime import current_revision
 from app.admin.deps import get_commons_client, get_extract_client
 from app.admin.jobs import get_job_status, trigger_era5_job
 from app.auth.deps import Principal, current_user, get_actor, require_role
@@ -85,6 +86,12 @@ router = APIRouter(
     tags=["admin"],
     dependencies=[Depends(require_role("admin", "curator"))],
 )
+
+
+@router.get("/realtime/version")
+def realtime_version(response: Response) -> dict[str, int]:
+    response.headers["Cache-Control"] = "private, no-store"
+    return {"revision": current_revision()}
 
 
 class RiderLevelParameters(BaseModel):

@@ -2,25 +2,28 @@
 // the latest team changes, one summarized entry per spot, searchable. Clicking a
 // spot entry opens a read-only change preview.
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getActivity, type ActivityItem } from "../lib/api";
 import { gapLabel } from "../lib/labels";
 import ActivityPreview from "../components/admin/ActivityPreview";
 import { PageHeader, SearchInput } from "../components/admin/ui";
+import { useAdminRealtimeRefresh } from "../context/AdminRealtimeContext";
 
 export default function AdminActivity() {
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [q, setQ] = useState("");
   const [preview, setPreview] = useState<ActivityItem | null>(null);
+  const load = useCallback(() => getActivity(q.trim() || undefined)
+    .then(setItems)
+    .catch(() => {}), [q]);
 
   useEffect(() => {
     const t = setTimeout(() => {
-      getActivity(q.trim() || undefined)
-        .then(setItems)
-        .catch(() => {});
+      void load();
     }, 250);
     return () => clearTimeout(t);
-  }, [q]);
+  }, [load]);
+  useAdminRealtimeRefresh(load, preview === null);
 
   return (
     <div>

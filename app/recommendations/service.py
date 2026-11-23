@@ -661,6 +661,35 @@ class RiderUtilityScorer:
         })
         return utility
 
+    def score_window(
+        self, spot: Any, weeks: Sequence[int], profile: dict | None
+    ) -> list[float]:
+        """Score a date window and retain representative components for its log."""
+        values: list[float] = []
+        snapshots: list[dict[str, Any]] = []
+        for week in weeks:
+            values.append(self.score(spot, {"week": week}, profile))
+            snapshots.append(dict(self.scored[spot.id][1]))
+
+        if snapshots:
+            aggregate = dict(snapshots[-1])
+            for key in (
+                "feasibility",
+                "condition_fit",
+                "character_fit",
+                "confidence",
+                "anomaly",
+                "social",
+                "social_weight",
+                "utility",
+            ):
+                aggregate[key] = sum(float(item[key]) for item in snapshots) / len(
+                    snapshots
+                )
+            aggregate["source"] = "search_window"
+            self.scored[spot.id] = (spot, aggregate)
+        return values
+
     def record_ranked(self, spot: Spot, score: float, rank_score: float) -> None:
         """Capture the distance-adjusted utility produced by search ranking."""
         existing = self.scored.get(spot.id)

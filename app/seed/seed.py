@@ -123,6 +123,7 @@ def seed(db: Session, *, include_europe: bool = False) -> dict[str, int]:
             style=s.get("style", []),
             facilities=s.get("facilities"),
             status=s["status"],
+            editorial_classification=s.get("editorial_classification"),
             facing=s.get("facing"),
             confidence=s.get("confidence"),
             editorial=editorial or None,

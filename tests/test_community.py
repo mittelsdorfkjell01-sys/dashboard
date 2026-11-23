@@ -298,6 +298,42 @@ def test_spot_correction_is_reviewed_without_creating_a_spot(anon_client, client
     db.commit()
 
 
+
+@pytest.mark.parametrize("field", ["hazards", "photos"])
+def test_spot_correction_accepts_safety_and_photo_areas(db, spot_id, field):
+    from app.community import service
+
+    sub = service.create_submission(db, payload={
+        "kind": "spot_edit_suggestion", "spot_id": spot_id,
+        "field": field, "message": "Bei Ebbe liegen Steine im Einstieg.",
+    }, submitter_name=None)
+    try:
+        assert sub.payload["field"] == field
+    finally:
+        db.delete(sub)
+        db.commit()
+
+
+def test_spot_correction_rejects_unknown_area(db, spot_id):
+    from app.community import service
+
+    with pytest.raises(ValueError, match="Korrekturbereich"):
+        service.create_submission(db, payload={
+            "kind": "spot_edit_suggestion", "spot_id": spot_id,
+            "field": "forecast", "message": "Die Vorhersage stimmt nicht.",
+        }, submitter_name=None)
+
+
+def test_spot_correction_areas_match_the_frontend_list():
+    """The form's list and the backend's allowlist are one contract."""
+    import re
+    from pathlib import Path
+
+    from app.community.service import SPOT_EDIT_FIELDS
+
+    source = (Path(__file__).resolve().parents[1] / "frontend/src/lib/spotEditTargets.ts").read_text(encoding="utf-8")
+    assert set(re.findall(r'key: "([a-z_]+)"', source)) == SPOT_EDIT_FIELDS
+
 # --- images ----------------------------------------------------------------
 
 def _upload(client, sid, data, *, kind, license_accept=True, credit="Kai", review=False):

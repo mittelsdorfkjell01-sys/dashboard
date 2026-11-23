@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ApiError,
   getAdminRiderModel,
@@ -10,6 +10,7 @@ import {
   type RiderModelLevel,
 } from "../lib/api";
 import { Button, Input, PageHeader, adminFieldClass } from "../components/admin/ui";
+import { useAdminRealtimeRefresh } from "../context/AdminRealtimeContext";
 
 const BOARD: { key: RiderModelBoardType; label: string }[] = [
   { key: "twintip", label: "Twintip" },
@@ -42,6 +43,7 @@ function parseKites(value: string): number[] {
 
 export default function AdminRiderModel() {
   const [document, setDocument] = useState<RiderModelDocument | null>(null);
+  const [baseline, setBaseline] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -53,18 +55,28 @@ export default function AdminRiderModel() {
   const [previewBoard, setPreviewBoard] = useState<RiderModelBoardType>("twintip");
   const [defaultKitesText, setDefaultKitesText] = useState("");
 
-  useEffect(() => {
-    getAdminRiderModel()
-      .then((data) => {
-        setDocument(data);
-        setDefaultKitesText(data.default_rider.quiver
-          .filter((item) => item.kind === "kite")
-          .map((item) => item.size)
-          .filter((item): item is number => typeof item === "number")
-          .join(", "));
-      })
-      .catch((reason) => setError(reason instanceof ApiError ? reason.message : "Rider-Modell konnte nicht geladen werden."));
+  const applyDocument = useCallback((data: RiderModelDocument) => {
+    setDocument(data);
+    setBaseline(JSON.stringify(data));
+    setDefaultKitesText(data.default_rider.quiver
+      .filter((item) => item.kind === "kite")
+      .map((item) => item.size)
+      .filter((item): item is number => typeof item === "number")
+      .join(", "));
   }, []);
+
+  const load = useCallback(async () => {
+    setError(null);
+    try {
+      applyDocument(await getAdminRiderModel());
+    } catch (reason) {
+      setError(reason instanceof ApiError ? reason.message : "Rider-Modell konnte nicht geladen werden.");
+    }
+  }, [applyDocument]);
+
+  useEffect(() => { void load(); }, [load]);
+  const dirty = document !== null && JSON.stringify(document) !== baseline;
+  useAdminRealtimeRefresh(load, !dirty && !saving && !previewing);
 
   const defaultBoard = document?.default_rider.quiver.find((item) => item.kind === "board" || item.kind === "foil")?.board_type ?? "twintip";
 
@@ -105,7 +117,7 @@ export default function AdminRiderModel() {
         rider_model: document.rider_model,
         default_rider: document.default_rider,
       });
-      setDocument(saved);
+      applyDocument(saved);
       setMessage(`Version ${saved.version} wurde angelegt und aktiviert.`);
     } catch (reason) {
       setError(reason instanceof ApiError ? reason.message : "Rider-Modell konnte nicht gespeichert werden.");

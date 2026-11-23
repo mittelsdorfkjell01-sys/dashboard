@@ -125,6 +125,16 @@ async function mockApi(page: Page, photos: CommunityImage[] = [], withWeatherFie
       });
     }
     if (["/spots/test", "/spots/laboe", "/spots/Alcyons"].includes(path)) return route.fulfill({ json: spot });
+    if (path === "/map/pois") return route.fulfill({ json: {
+      source: "OpenStreetMap", attribution: "© OpenStreetMap-Mitwirkende", incomplete: true,
+      items: [
+        { id: "node/1", category: "parking", name: "Strandparkplatz", lat: 54.3995, lon: 10.1995, distance_m: 130, osm_url: "https://www.openstreetmap.org/node/1" },
+        { id: "node/2", category: "cafe", name: "Dünen Café", lat: 54.401, lon: 10.201, distance_m: 260, osm_url: "https://www.openstreetmap.org/node/2", opening_hours: "Mo-Fr 09:00-18:00", website: "https://duenen.example/", outdoor_seating: true, cuisine: ["coffee shop"], vegetarian: "yes", vegan: "limited", card_payment: false, instagram: "https://www.instagram.com/duenencafe/" },
+        { id: "node/3", category: "bar", name: "Beach Bar", lat: 54.4015, lon: 10.2015, distance_m: 390, osm_url: "https://www.openstreetmap.org/node/3" },
+        { id: "node/4", category: "surf_school", name: "Windwerk", lat: 54.402, lon: 10.202, distance_m: 520, osm_url: "https://www.openstreetmap.org/node/4" },
+        { id: "node/5", category: "campsite", name: "Küstencamp", lat: 54.4025, lon: 10.2025, distance_m: 650, osm_url: "https://www.openstreetmap.org/node/5" },
+      ],
+    } });
     if (path === "/regions/r1") return route.fulfill({ json: { id: "r1", slug: "kieler-bucht", name: "Kieler Bucht", country: "DE", center: null, description: null, image: null, season: null, defaults: null, status: "published", updated_at: "2026-08-24T00:00:00Z" } });
     if (path === "/spots/test/forecast") return route.fulfill({ json: forecast });
     if (path === "/spots/test/forecast-summary") return route.fulfill({ json: forecastSummary });
@@ -271,200 +281,243 @@ test("Galeriebilder werden vor dem Öffnen geladen und liegen im ersten Overlay-
   await expect(page.locator('[role="dialog"] button.group img')).toHaveCount(2);
 });
 
-test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", async ({ page }, testInfo) => {
-  let delayReplacementTiles = false;
-  let baseTilesInFlight = 0;
-  let referenceRequests = 0;
-  let referenceStartedBeforeBaseLoaded = false;
-  const replacementZoomLevels = new Set<string>();
-  await page.route(/https:\/\/(?:services|server)\.arcgisonline\.com\/.*/, async (route) => {
-    const isReference = route.request().url().includes("World_Boundaries_and_Places");
-    if (isReference) {
-      referenceRequests += 1;
-      if (baseTilesInFlight > 0) referenceStartedBeforeBaseLoaded = true;
-    } else {
-      baseTilesInFlight += 1;
+// The spot map draws OpenFreeMap vector tiles. An empty protobuf is a valid,
+// empty tile (and an empty glyph range), so the map settles without network.
+async function mockMapTiles(page: Page, options: { failTiles?: () => boolean } = {}) {
+  const counts = { tilejson: 0, tiles: 0, glyphs: 0 };
+  await page.route(/https:\/\/tiles\.openfreemap\.org\/.*/, async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === "/planet") {
+      counts.tilejson += 1;
+      return route.fulfill({ json: {
+        tilejson: "3.0.0", minzoom: 0, maxzoom: 14,
+        tiles: ["https://tiles.openfreemap.org/planet/test/{z}/{x}/{y}.pbf"],
+      } });
     }
-    if (delayReplacementTiles) {
-      const path = new URL(route.request().url()).pathname.split("/");
-      replacementZoomLevels.add(path.at(-3) ?? "");
-      await new Promise((resolve) => setTimeout(resolve, 650));
+    if (path.startsWith("/fonts/")) {
+      counts.glyphs += 1;
+      return route.fulfill({ contentType: "application/x-protobuf", body: Buffer.alloc(0) });
     }
-    await route.fulfill({
-      contentType: "image/svg+xml",
-      body: isReference
-        ? '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"/>'
-        : '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#73919a"/></svg>',
-    });
-    if (!isReference) baseTilesInFlight -= 1;
+    counts.tiles += 1;
+    if (options.failTiles?.()) return route.abort("failed");
+    return route.fulfill({ contentType: "application/x-protobuf", body: Buffer.alloc(0) });
   });
-  await page.setViewportSize({ width: 1280, height: 900 });
+  return counts;
+}
+
+async function openLocator(page: Page) {
   await mockApi(page);
   await page.goto("/spot/laboe/info");
-
   const map = page.getByRole("region", { name: "Lage", exact: true });
   await expect(map).toBeAttached();
-  await map.scrollIntoViewIfNeeded();
-  const tile = map.locator(".leaflet-tile").first();
-  await expect(tile).toBeVisible();
-  await expect(tile).toHaveCSS("filter", "none");
-  await expect(tile).toHaveCSS("outline-width", "1px");
-  await expect(tile).toHaveCSS("outline-style", "solid");
-  await expect(tile).toHaveCSS("outline-color", "rgba(0, 0, 0, 0)");
-  // The spot page no longer shrinks its desktop body with CSS zoom (0.85), so
-  // the locator needs no counter-zoom either: tiles render at native scale.
-  const mapZoom = await map.locator(".swd-locator-map").evaluate((element) =>
-    Number.parseFloat(getComputedStyle(element).zoom),
-  );
-  expect(mapZoom).toBeCloseTo(1, 5);
-  await expect(map.locator(".leaflet-tile-pane")).not.toHaveCSS("filter", "none");
-  await expect(map.locator(".swd-locator-labels .leaflet-tile-loaded").first()).toBeVisible();
-  expect(referenceRequests).toBeGreaterThan(0);
-  expect(referenceStartedBeforeBaseLoaded).toBe(false);
-  const visibleReadyMs = Number(await map.locator(".leaflet-container").getAttribute("data-visible-ready-ms"));
-  const visibleTileRequests = Number(await map.locator(".leaflet-container").getAttribute("data-visible-tile-requests"));
-  expect(visibleReadyMs).toBeGreaterThan(0);
-  expect(visibleTileRequests).toBeGreaterThan(0);
-  const edgeBlend = await map.locator(".swd-locator-map").evaluate((element) =>
-    getComputedStyle(element, "::after").boxShadow,
-  );
-  expect(edgeBlend).toBe("none");
+  await map.evaluate((element) => element.scrollIntoView({ block: "center" }));
+  await expect(map.locator(".swd-locator-map .maplibregl-canvas")).toBeVisible();
+  return map;
+}
 
-  // Slow replacement levels must neither uncover the map nor block the next
-  // wheel gesture. The old implementation serialised gestures behind tile
-  // loading (up to 1.8 s), which made precision trackpads feel unresponsive.
-  await expect(map.locator(".leaflet-tile-loaded").first()).toBeVisible();
-  await map.getByRole("button", { name: "Karte aktivieren" }).click();
-  await expect(map.locator(".swd-locator-map")).toHaveAttribute("data-lenis-prevent", "");
-  const mapControls = [
+async function zoomTo(map: ReturnType<Page["getByRole"]>, target: number) {
+  const root = map.locator(".swd-locator-map");
+  for (let step = 0; step < 12; step += 1) {
+    const current = Number(await root.getAttribute("data-current-zoom"));
+    if (current >= target) return;
+    await map.getByRole("button", { name: "Vergrößern" }).click();
+    await expect.poll(async () => Number(await root.getAttribute("data-current-zoom"))).toBeGreaterThan(current + 0.5);
+  }
+}
+
+test("Spot-Karte zeigt die Standardkarte mit bloßen Glyphen als Bedienelementen", async ({ page }) => {
+  const tiles = await mockMapTiles(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const map = await openLocator(page);
+  const root = map.locator(".swd-locator-map");
+
+  await expect(root).toHaveAttribute("data-visible-ready-ms", /\d/);
+  expect(tiles.tilejson).toBeGreaterThan(0);
+  expect(tiles.tiles).toBeGreaterThan(0);
+  // The spot page no longer shrinks its desktop body with CSS zoom.
+  expect(await root.evaluate((element) => Number.parseFloat(getComputedStyle(element).zoom))).toBeCloseTo(1, 5);
+  // The map follows the site theme (2026-11-22); it is no longer pinned light.
+  await expect(root).not.toHaveClass(/sw-theme-light/);
+  await expect(root).toHaveCSS("background-color", "rgb(244, 242, 238)");
+  // The spot is /map's small dot (12px, 16px with the house mark), not a halo disc.
+  await expect(map.locator(".swd-locator-spot .swd-locator-dot")).toHaveCSS("width", /^(12|16)px$/);
+  // Controls are bare dark glyphs, not buttons with a surface.
+  const zoomIn = map.getByRole("button", { name: "Vergrößern" });
+  await expect(zoomIn).toHaveCSS("color", "rgb(26, 31, 36)");
+  await expect(zoomIn).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+
+  for (const control of [
     map.getByRole("button", { name: "Vergrößern" }),
     map.getByRole("button", { name: "Verkleinern" }),
-    map.getByRole("link", { name: "In externer Karte öffnen" }),
+    map.getByRole("button", { name: "Dein Standort" }),
+    map.getByRole("link", { name: "Route zum Spot in Karten-App öffnen" }),
     map.getByRole("button", { name: "Kartenquellen anzeigen" }),
-  ];
-  for (const control of mapControls) {
-    const controlBox = await control.boundingBox();
-    expect(controlBox?.width).toBeGreaterThanOrEqual(44);
-    expect(controlBox?.height).toBeGreaterThanOrEqual(44);
-  }
-
-  // Button zoom travels through fractional values and finishes with a short
-  // raster fade; the whole map container must never scale or expose an edge.
-  delayReplacementTiles = true;
-  await map.getByRole("button", { name: "Vergrößern" }).click();
-  await expect(map.locator(".leaflet-container")).toHaveClass(/swd-locator-zoom-fading/);
-  await expect(map.locator(".leaflet-container")).not.toHaveClass(/swd-locator-zoom-fading/);
-
-  const box = await map.locator(".leaflet-container").boundingBox();
-  expect(box).not.toBeNull();
-  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
-  const zoomBeforeWheel = Number(await map.locator(".leaflet-container").getAttribute("data-current-zoom"));
-  await page.mouse.wheel(0, 120);
-  await expect.poll(async () => Number(await map.locator(".leaflet-container").getAttribute("data-current-zoom")))
-    .not.toBe(zoomBeforeWheel);
-  const fractionalZoom = Number(await map.locator(".leaflet-container").getAttribute("data-current-zoom"));
-  expect(Math.abs(fractionalZoom * 2 - Math.round(fractionalZoom * 2))).toBeGreaterThan(0.01);
-  await page.waitForTimeout(300);
-  // Cross a raster level after proving the visible zoom itself remains
-  // fractional; this exercises the delayed replacement-tile path too.
-  await page.mouse.wheel(0, 480);
-  // Chromium's emulated touch context does not schedule mouse-wheel raster
-  // replacement like a real pinch; the separate mobile test covers sizing.
-  if (testInfo.project.name === "chromium-desktop") {
-    await expect.poll(() => replacementZoomLevels.size, { timeout: 1000 }).toBeGreaterThanOrEqual(1);
-  }
-
-  const uncoveredSamples = await map.locator(".leaflet-container").evaluate((container) => {
-    const mapRect = container.getBoundingClientRect();
-    const tiles = [...container.querySelectorAll<HTMLElement>(".leaflet-tile-loaded")]
-      .filter((tile) => {
-        const level = tile.closest<HTMLElement>(".leaflet-tile-container");
-        return getComputedStyle(tile).visibility !== "hidden" && (!level || Number.parseFloat(getComputedStyle(level).opacity) > 0);
-      })
-      .map((tile) => tile.getBoundingClientRect());
-    const samples = [0.01, 0.25, 0.5, 0.75, 0.99].flatMap((x) =>
-      [0.01, 0.5, 0.99].map((y) => ({
-        x: mapRect.left + mapRect.width * x,
-        y: mapRect.top + mapRect.height * y,
-      })),
-    );
-    return samples.filter((point) => !tiles.some((tile) =>
-      point.x >= tile.left && point.x <= tile.right && point.y >= tile.top && point.y <= tile.bottom,
-    ));
-  });
-  expect(uncoveredSamples).toEqual([]);
-});
-
-test("Spot-Karte respektiert Reduced Motion und hat mobile Touch-Ziele", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.route(/https:\/\/(?:services|server)\.arcgisonline\.com\/.*/, async (route) => {
-    await route.fulfill({
-      contentType: "image/svg+xml",
-      body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#73919a"/></svg>',
-    });
-  });
-  await page.setViewportSize({ width: 390, height: 844 });
-  await mockApi(page);
-  await page.goto("/spot/laboe/info");
-
-  const map = page.getByRole("region", { name: "Lage", exact: true });
-  await map.scrollIntoViewIfNeeded();
-  await map.getByRole("button", { name: "Karte im Vollbild öffnen" }).click();
-  const close = map.getByRole("button", { name: "Vollbild schließen" });
-  await expect(close).toBeVisible();
-  const fullscreenCanvas = await map.locator(".leaflet-container").boundingBox();
-  const viewport = await page.evaluate(() => ({
-    width: document.documentElement.clientWidth,
-    height: document.documentElement.clientHeight,
-  }));
-  expect(fullscreenCanvas?.x).toBeLessThanOrEqual(0);
-  expect(fullscreenCanvas?.y).toBeLessThanOrEqual(0);
-  expect(fullscreenCanvas?.width).toBeGreaterThanOrEqual(viewport.width);
-  expect(fullscreenCanvas?.height).toBeGreaterThanOrEqual(viewport.height - 1);
-  for (const control of [close, map.getByRole("button", { name: "Vergrößern" }), map.getByRole("button", { name: "Kartenquellen anzeigen" })]) {
+  ]) {
     const box = await control.boundingBox();
     expect(box?.width).toBeGreaterThanOrEqual(44);
     expect(box?.height).toBeGreaterThanOrEqual(44);
   }
+  await expect(map.getByRole("link", { name: "Route zum Spot in Karten-App öffnen" }))
+    .toHaveAttribute("href", /destination=54\.4%2C10\.2|daddr=54\.4%2C10\.2/);
 
-  await map.getByRole("button", { name: "Vergrößern" }).click();
-  await page.waitForTimeout(350);
-  await expect(map.locator(".leaflet-container")).not.toHaveClass(/swd-locator-zoom-fading/);
+  // Locked until clicked: page scroll is never hijacked.
+  await map.getByRole("button", { name: "Karte aktivieren" }).click();
+  await expect(root).toHaveAttribute("data-map-active", "true");
+  await expect(root).toHaveAttribute("data-lenis-prevent", "");
+  await expect(map.locator(".maplibregl-canvas")).toBeFocused();
+
+  await map.getByRole("button", { name: "Kartenquellen anzeigen" }).click();
+  await expect(map.getByRole("complementary", { name: "Kartenquellen" })).toContainText("OpenFreeMap");
+  await expect(map.getByRole("complementary", { name: "Kartenquellen" })).toContainText("OpenStreetMap");
 });
 
-test("Spot-Karte meldet fehlende Satellitenkacheln und lädt sie erneut", async ({ page }) => {
-  let recoverTiles = false;
-  let primaryRequests = 0;
-  let fallbackRequests = 0;
-
-  await page.route(/https:\/\/(?:services|server)\.arcgisonline\.com\/.*/, async (route) => {
-    const host = new URL(route.request().url()).hostname;
-    if (host === "services.arcgisonline.com") primaryRequests += 1;
-    if (host === "server.arcgisonline.com") fallbackRequests += 1;
-
-    if (!recoverTiles) {
-      await route.abort("failed");
-      return;
-    }
-    await route.fulfill({
-      contentType: "image/svg+xml",
-      body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#73919a"/></svg>',
-    });
-  });
+test("Spot-Karte blendet Orte gestaffelt ein, ohne sie zu stapeln, und zeigt Details", async ({ page }) => {
+  await mockMapTiles(page);
   await page.setViewportSize({ width: 1280, height: 900 });
-  await mockApi(page);
-  await page.goto("/spot/laboe/info");
+  // Wednesday 11:00 in Berlin (the spot's zone in the mock): the café is open.
+  await page.clock.setFixedTime(new Date("2026-11-18T10:00:00Z"));
+  const map = await openLocator(page);
+  const root = map.locator(".swd-locator-map");
+  const visiblePins = map.locator(".swd-poi:not([hidden])");
 
-  const map = page.getByRole("region", { name: "Lage", exact: true });
-  await map.scrollIntoViewIfNeeded();
-  await expect(map.getByRole("alert")).toContainText("Satellitenbild unvollständig");
-  expect(primaryRequests).toBeGreaterThan(0);
-  expect(fallbackRequests).toBeGreaterThan(0);
+  await expect(visiblePins).toHaveCount(0);
+  await zoomTo(map, 14.05);
+  // Surf school, parking and camping first; café and bar need a closer look.
+  await expect(map.locator(".swd-poi-surf_school:not([hidden])")).toHaveCount(1);
+  await expect(map.locator(".swd-poi-cafe:not([hidden])")).toHaveCount(0);
+  await zoomTo(map, 14.9);
+  await expect(visiblePins).toHaveCount(5);
+  await expect(map.locator(".swd-poi.has-label")).toHaveCount(0);
+  // Names follow from the label zoom; a name never covers another pin.
+  await zoomTo(map, 15.6);
+  await expect(map.locator(".swd-poi.has-label").first()).toBeVisible();
 
-  recoverTiles = true;
+  // No two visible pins overlap.
+  const boxes = await visiblePins.evaluateAll((elements) => elements.map((element) => {
+    const rect = element.querySelector(".swd-poi-disc")!.getBoundingClientRect();
+    return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
+  }));
+  for (const [index, a] of boxes.entries()) {
+    for (const b of boxes.slice(index + 1)) {
+      expect(a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top).toBe(false);
+    }
+  }
+
+  await map.getByRole("button", { name: "Karte aktivieren" }).click();
+  await map.getByRole("button", { name: "Café: Dünen Café" }).click();
+  const sheet = map.getByRole("complementary", { name: "Café: Dünen Café" });
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByRole("heading", { name: "Dünen Café" })).toBeVisible();
+  await expect(sheet.getByText("Mo–Fr 09:00–18:00")).toBeVisible();
+  await expect(sheet.getByText("Café · 260 m vom Spot")).toBeVisible();
+  // Open/closed sits on the name's line, flush right, in the status green.
+  const badge = sheet.getByText("Geöffnet", { exact: true });
+  await expect(badge).toHaveCSS("color", "rgb(21, 128, 61)");
+  const [badgeBox, titleBox] = [await badge.boundingBox(), await sheet.getByRole("heading", { name: "Dünen Café" }).boundingBox()];
+  expect(Math.abs((badgeBox?.y ?? 0) + (badgeBox?.height ?? 0) / 2 - ((titleBox?.y ?? 0) + (titleBox?.height ?? 0) / 2))).toBeLessThan(6);
+  expect(badgeBox?.x ?? 0).toBeGreaterThan((titleBox?.x ?? 0) + 100);
+  // Minimal card (Variante B, 2026-11-21): name, distance, hours, one hand-off.
+  // Chromium is not Safari, so the hand-off is Google Maps.
+  await expect(sheet.getByRole("link", { name: "In Google Maps öffnen" })).toHaveAttribute("href", /google\.com\/maps\/search\/\?api=1&query=/);
+  await expect(sheet.getByRole("link")).toHaveCount(1);
+  for (const gone of ["Website", "Instagram", "Anrufen", "Route", "In OpenStreetMap ansehen"]) {
+    await expect(sheet.getByRole("link", { name: gone, exact: true })).toHaveCount(0);
+  }
+  await expect(sheet.getByText("Nur bar")).toHaveCount(0);
+  await expect(sheet.getByText("Daten © OpenStreetMap-Mitwirkende")).toBeVisible();
+  await expect(map.locator('.swd-poi[data-selected="true"]')).toHaveCount(1);
+
+  await page.keyboard.press("Escape");
+  await expect(sheet).toHaveCount(0);
+  for (let step = 0; step < 4; step += 1) await map.getByRole("button", { name: "Verkleinern" }).click();
+  await expect.poll(async () => Number(await root.getAttribute("data-current-zoom"))).toBeLessThan(13.5);
+  await expect(visiblePins).toHaveCount(0);
+});
+
+test("Spot-Karte setzt den eigenen Standort per GPS oder auf der Karte und übergibt die Route", async ({ page, context }) => {
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 54.33, longitude: 10.13 });
+  await mockMapTiles(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const map = await openLocator(page);
+
+  await map.getByRole("button", { name: "Dein Standort" }).click();
+  const sheet = map.getByRole("complementary", { name: "Dein Standort" });
+  await expect(sheet.getByText("Noch nicht festgelegt")).toBeVisible();
+  await sheet.getByRole("button", { name: "Aktuellen Standort verwenden" }).click();
+  await expect(sheet.getByText(/GPS · \d+,?\d* km zum Spot/)).toBeVisible();
+  await expect(map.getByRole("img", { name: "Dein Standort" })).toBeVisible();
+  await expect(map.getByRole("link", { name: "Route zum Spot in Karten-App öffnen" })).toHaveAttribute("href", /(origin|saddr)=54\.33%2C10\.13/);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("swd.mapLocation") ?? "null")))
+    .toEqual({ lat: 54.33, lon: 10.13, source: "gps" });
+
+  await sheet.getByRole("button", { name: "Auf der Karte wählen" }).click();
+  await expect(map.locator(".swd-locator-crosshair")).toBeVisible();
+  await map.getByRole("button", { name: "Hier setzen" }).click();
+  await expect(map.getByRole("complementary", { name: "Dein Standort" }).getByText(/Auf der Karte gesetzt/)).toBeVisible();
+
+  await map.getByRole("complementary", { name: "Dein Standort" }).getByRole("button", { name: "Entfernen" }).click();
+  await expect(map.locator(".swd-locator-user")).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem("swd.mapLocation"))).toBeNull();
+});
+
+test("Spot-Karte öffnet auf dem Handy im Vollbild, mit Touch-Zielen und Reduced Motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await mockMapTiles(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const map = await openLocator(page);
+
+  await map.getByRole("button", { name: "Karte im Vollbild öffnen" }).click();
+  const close = map.getByRole("button", { name: "Vollbild schließen" });
+  await expect(close).toBeVisible();
+  await expect(close).toBeFocused();
+  const canvas = await map.locator(".maplibregl-canvas").boundingBox();
+  expect(canvas?.x).toBeLessThanOrEqual(0);
+  expect(canvas?.y).toBeLessThanOrEqual(0);
+  expect(canvas?.width).toBeGreaterThanOrEqual(390);
+  expect(canvas?.height).toBeGreaterThanOrEqual(844);
+  for (const control of [close, map.getByRole("button", { name: "Vergrößern" }), map.getByRole("button", { name: "Dein Standort" })]) {
+    const box = await control.boundingBox();
+    expect(box?.width).toBeGreaterThanOrEqual(44);
+    expect(box?.height).toBeGreaterThanOrEqual(44);
+  }
+  // The spot pin opens its own card with the maps-app hand-off.
+  await map.getByRole("button", { name: "Spot Alcyons" }).click();
+  const spotSheet = map.getByRole("complementary", { name: "Spot Alcyons" });
+  const openLink = spotSheet.getByRole("link", { name: "In Google Maps öffnen" });
+  await expect(openLink).toBeVisible();
+  expect((await openLink.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  const sheetBox = await spotSheet.boundingBox();
+  expect((sheetBox?.x ?? 0) + (sheetBox?.width ?? 0)).toBeLessThanOrEqual(390);
+  // Card and map follow the site theme: dark mode subdues the ground and turns
+  // the glyphs light; the card stays a step darker than the land.
+  const mapRoot = map.locator(".swd-locator-map");
+  await expect(spotSheet).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+  await expect(spotSheet).toHaveCSS("background-color", "rgb(26, 31, 36)");
+  await expect(mapRoot).toHaveCSS("background-color", "rgb(38, 42, 46)");
+  await expect(map.getByRole("button", { name: "Vergrößern" })).toHaveCSS("color", "rgb(230, 226, 220)");
+  // In dark mode the spot dot carries the dark ring, as on /map.
+  await expect(map.locator(".swd-locator-spot .swd-locator-dot")).toHaveCSS("color", "rgb(14, 17, 20)");
+  await page.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
+
+  await page.keyboard.press("Escape");
+  await expect(spotSheet).toHaveCount(0);
+  await close.click();
+  await expect(map.getByRole("button", { name: "Karte im Vollbild öffnen" })).toBeFocused();
+});
+
+test("Spot-Karte meldet fehlende Kartenkacheln und lädt sie erneut", async ({ page }) => {
+  let failing = true;
+  await mockMapTiles(page, { failTiles: () => failing });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const map = await openLocator(page);
+
+  await expect(map.getByRole("alert")).toContainText("Karte unvollständig");
+  failing = false;
   await map.getByRole("button", { name: "Erneut laden" }).click();
-  await expect(map.locator(".leaflet-tile-loaded").first()).toBeVisible();
   await expect(map.getByRole("alert")).toHaveCount(0);
+  await expect(map.locator(".swd-locator-map")).toHaveAttribute("data-visible-ready-ms", /\d/);
 });
 
 test("Daten-Seite zeigt Meteogramm und Ausblick", async ({ page }) => {
@@ -863,4 +916,97 @@ test("Daten-Seite ist axe-konform (mobil)", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Alcyons" })).toBeVisible();
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations.filter((item) => ["serious", "critical"].includes(item.impact ?? ""))).toEqual([]);
+});
+
+test("Beim Runterscrollen bleibt oben links ein Zurück-Pfeil, auf Info und Daten", async ({ page }) => {
+  await mockApi(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const tab of ["info", "daten"] as const) {
+    await page.goto(`/spot/test/${tab}`);
+    const pinned = page.locator("[data-scroll-back]");
+    await expect(page.locator("[data-page-back]")).toBeVisible();
+    // At the top the header's own arrow is on screen; the pinned copy stays out.
+    await expect(pinned).toHaveAttribute("aria-hidden", "true");
+    await page.mouse.wheel(0, 1200);
+    await expect(pinned).not.toHaveAttribute("aria-hidden", "true");
+    const box = await pinned.boundingBox();
+    expect(box && box.x < 40 && box.y < 60 && box.width >= 44 && box.height >= 44).toBeTruthy();
+    if (process.env.SCROLL_BACK_SHOTS) { await page.waitForTimeout(800); await page.screenshot({ path: `${process.env.SCROLL_BACK_SHOTS}/spot-${tab}.png` }); }
+  }
+  await page.locator("[data-scroll-back]").click();
+  await expect(page).toHaveURL(/\/$/);
+});
+
+test("Änderung vorschlagen: beschriftete Felder, Senden bleibt bei kleiner Höhe erreichbar", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockApi(page);
+  let sent: Record<string, unknown> | null = null;
+  await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\/submissions$/, async (route) => {
+    sent = route.request().postDataJSON();
+    await route.fulfill({ status: 201, json: { id: "s1", status: "pending" } });
+  });
+  await page.goto("/spot/test/info");
+  await page.getByRole("button", { name: "Änderung vorschlagen" }).click();
+  const dialog = page.getByRole("dialog", { name: "Änderung vorschlagen" });
+  await expect(dialog).toBeVisible();
+  // Every field carries a real label, not just a placeholder.
+  await expect(dialog.getByLabel("Welcher Bereich?")).toBeVisible();
+  await expect(dialog.getByLabel("Name (optional)")).toBeVisible();
+  await expect(dialog.getByLabel("E-Mail (optional)")).toBeVisible();
+  const area = dialog.getByLabel("Welcher Bereich?");
+  await expect(area.locator("option")).toHaveText([
+    "Name des Spots", "Region / Land", "Sportarten", "Beschreibung", "Sicherheit und Gefahren",
+    "Spotprofil (Level, Gewässer, Untergrund, Windrichtung)", "Ausstattung", "Lage auf der Karte", "Fotos", "Sonstiges",
+  ]);
+  // Phone: a sheet on the bottom edge.
+  const card = await dialog.boundingBox();
+  expect(Math.round(card!.y + card!.height)).toBeGreaterThan(844 - 40);
+
+  // A keyboard-sized viewport: the card shrinks, the fields scroll, and the
+  // submit button stays on screen.
+  await page.setViewportSize({ width: 390, height: 380 });
+  await dialog.getByLabel(/Deine Änderung/).fill("Der Parkplatz ist seit 2026 kostenpflichtig.");
+  const submit = dialog.getByRole("button", { name: "Vorschlag senden" });
+  await expect(submit).toBeInViewport();
+  const sendBox = await submit.boundingBox();
+  expect(sendBox!.y + sendBox!.height).toBeLessThanOrEqual(380);
+  expect(sendBox!.height).toBeGreaterThanOrEqual(44);
+  const closeBox = await dialog.getByRole("button", { name: "Schließen" }).boundingBox();
+  expect(closeBox!.height).toBeGreaterThanOrEqual(44);
+
+  await area.selectOption("hazards");
+  await submit.click();
+  await expect(dialog.getByRole("status")).toContainText("Danke");
+  expect(sent).toMatchObject({ payload: { kind: "spot_edit_suggestion", field: "hazards", message: "Der Parkplatz ist seit 2026 kostenpflichtig." } });
+});
+
+test("Antworten sind nur eingerückt, ohne Thread-Linie, und die Aktionszeile bleibt einzeilig", async ({ page }) => {
+  const iso = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
+  await mockApi(page);
+  await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\/spots\/test\/tips$/, (route) => route.fulfill({ json: { items: [
+    { id: "a1", body: "Bei Levante ab 20 kn wird es am Strand sehr voll.", title: null, author_name: "Lena M", created_at: iso(300), parent_id: null, upvotes: 4 },
+    { id: "r1", body: "Stimmt, morgens ist es deutlich entspannter.", title: null, author_name: "Jonas K", created_at: iso(200), parent_id: "a1", upvotes: 12 },
+  ] } }));
+  // 320 only on the touch profile: a desktop window that narrow (400% zoom)
+  // also loses 15px to the scrollbar, and there a reply's row may wrap.
+  const widths = test.info().project.name.includes("mobile") ? [320, 390, 1024, 1280] : [360, 390, 1024, 1280];
+  for (const width of widths) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/spot/test/info");
+    await page.getByRole("button", { name: "1 Antwort ansehen" }).click();
+    const parent = page.getByText("Lena M", { exact: true });
+    const reply = page.getByText("Jonas K", { exact: true });
+    await expect(reply).toBeVisible();
+    const thread = page.locator("article").filter({ hasText: "Lena M" });
+    // No rail and no elbow: nothing in the thread draws a vertical line.
+    expect(await thread.locator(".w-px, .border-l").count()).toBe(0);
+    // The reply starts further in than its parent's name.
+    const [p, r] = [await parent.boundingBox(), await reply.boundingBox()];
+    expect(r!.x).toBeGreaterThan(p!.x + 20);
+    // Each action row (time · Antworten · …) fits on one line; the vote has
+    // its own column at the right edge.
+    for (const row of await thread.locator("time").evaluateAll((times) => times.map((t) => t.parentElement!.getBoundingClientRect().height))) {
+      expect(row, `meta row at ${width}px`).toBeLessThanOrEqual(56);
+    }
+  }
 });

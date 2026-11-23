@@ -3,6 +3,7 @@
 // and the list refreshes after a decision.
 
 import { useCallback, useEffect, useState } from "react";
+import { spotEditTargetLabel } from "../lib/spotEditTargets";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { resolveMediaUrl } from "../lib/api";
 import {
@@ -36,6 +37,7 @@ import {
   parseDuplicateConflict,
   type DuplicateConflict,
 } from "../lib/duplicateConflicts";
+import { useAdminRealtimeRefresh } from "../context/AdminRealtimeContext";
 
 type Tab = "submissions" | "hero" | "gallery" | "reported" | "content";
 
@@ -114,6 +116,7 @@ export default function AdminReview() {
     confirmText: string;
     run: (note?: string) => Promise<unknown>;
   } | null>(null);
+  useAdminRealtimeRefresh(load, !busy && duplicateWarning === null && noteAction === null);
   const askNote = (
     title: string,
     confirmText: string,
@@ -420,7 +423,7 @@ function SubmissionCard({
       <div className="min-w-0 flex-1 space-y-2">
         <div className="font-semibold text-ink">Korrektur zu {submission.name ?? "Spot"}</div>
         <p className="text-label text-muted">von {submission.submitter_name} · {new Date(submission.created_at).toLocaleDateString("de-DE")}</p>
-        <p className="text-label text-ink"><span className="font-semibold">Bereich:</span> {String(p.field ?? "Sonstiges")}</p>
+        <p className="text-label text-ink"><span className="font-semibold">Bereich:</span> {spotEditTargetLabel(p.field)}</p>
         <p className="whitespace-pre-wrap text-label text-ink">{String(p.message ?? "")}</p>
         {spotId && <Link to={`/admin/spot/${spotId}/edit`} className="inline-flex min-h-11 items-center text-label font-semibold text-ink underline">Spot im Editor öffnen</Link>}
       </div>

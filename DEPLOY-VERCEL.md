@@ -28,6 +28,9 @@ admin at `/admin` and keeps the public landing at `/`.
 
 Because each SPA and its `/api` share one origin, the login cookie stays same-site
 (`SameSite=Lax` + `Secure`) and there is **no CORS**.
+`CORS_ORIGINS` is nevertheless set to each project's own HTTPS origin below so
+production never inherits the development allowlist; this does not enable a
+cross-origin client.
 
 > **Honesty note.** Vercel can't run your Postgres/Redis/background jobs — those
 > move to managed services, and the climatology batch runs **offline** (below).
@@ -96,6 +99,7 @@ Directory = repo root** (the included `vercel.json` drives the build).
 | `API_DEBUG` | `false` |
 | `APP_ENV` | `production` |
 | `COOKIE_SECURE` | `true` |
+| `PASSWORD_BREACH_CHECK_ENABLED` | `true` |
 | `JWT_SECRET` | independent `openssl rand -base64 48` secret per project |
 
 **Public project** (`surfwinddata.com`) — add only:
@@ -104,6 +108,7 @@ Directory = repo root** (the included `vercel.json` drives the build).
 |---|---|
 | `ENABLE_ADMIN_API` | `false` (drops `/auth` + `/admin*`) |
 | `DEPLOYMENT_MODE` | `public` |
+| `CORS_ORIGINS` | `https://surfwinddata.com` |
 
 *(no `VITE_INCLUDE_ADMIN` or `ADMIN_BOOTSTRAP_*` — the public build has no admin. `JWT_SECRET` is still required because public accounts use signed sessions.)*
 
@@ -118,6 +123,7 @@ Directory = repo root** (the included `vercel.json` drives the build).
 | `ADMIN_BOOTSTRAP_PASSWORD` | a strong password (change after first login) |
 | `COOKIE_SECURE` | `true` |
 | `TAKEDOWN_CONTACT_EMAIL` | A monitored operator contact address |
+| `CORS_ORIGINS` | `https://dashboardsurfwind.vercel.app` |
 
 The admin build intentionally contains only dashboard routes. Legal operator
 variables are required by `build:release` only for the separate public project.

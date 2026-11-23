@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ApiError, enqueueV3, getV3Directions, getV3Status, getV3Variant, putV3Cell, putV3DirectionGeometry, recalculateV3Directions, type V3Directions, type V3DirectionGeometry, type V3StartArea, type V3Status, type V3Variant } from "../lib/api";
 import { Badge, Button, adminFieldClass, type BadgeTone } from "../components/admin/ui";
+import UnsavedChangesDialog from "../components/admin/UnsavedChangesDialog";
+import { useAdminRealtimeRefresh } from "../context/AdminRealtimeContext";
+import { useUnsavedChangesGuard } from "../lib/useUnsavedChangesGuard";
 
 const NAMES = ["N","NNO","NO","ONO","O","OSO","SO","SSO","S","SSW","SW","WSW","W","WNW","NW","NNW"];
 const STATE: Record<string,[string,BadgeTone]> = {
@@ -50,6 +53,7 @@ export function WeekChart({data,min,max,mode}:{data:V3Variant;min:number;max:num
 }
 
 export default function AdminWindClimatologyV3() {
+  const {blocker,setDirty,markClean}=useUnsavedChangesGuard();
   const {spotId=""}=useParams(); const [status,setStatus]=useState<V3Status|null>(null); const [dirs,setDirs]=useState<V3Directions|null>(null);
   const [geometryVersion,setGeometryVersion]=useState("1");
   const [areas,setAreas]=useState<V3StartArea[]>([]);
@@ -61,11 +65,16 @@ export default function AdminWindClimatologyV3() {
   const [directionMode,setDirectionMode]=useState<"all"|"usable">("all"); const [variant,setVariant]=useState<V3Variant|null>(null);
   const [allComparison,setAllComparison]=useState<V3Variant|null>(null);
   const [busy,setBusy]=useState<string|null>(null); const [message,setMessage]=useState<string|null>(null);
-  const load=useCallback(async()=>{try{const [s,d]=await Promise.all([getV3Status(spotId),getV3Directions(spotId)]);setStatus(s);setDirs(d);const geometry=d.geometry;setGeometryVersion(geometry?.geometry_version??"1");setAreas(geometry?.start_areas??[]);setInvalidGeometry([]);setExclusionsJson(JSON.stringify(geometry?.exclusions??[],null,2));setConflictsText((geometry?.conflicts??[]).join("\n"));setMode(s.cell?.mode??"automatic");setLat(String(s.cell?.requested[0]??""));setLon(String(s.cell?.requested[1]??""));}catch(e){setMessage(errorText(e));}},[spotId]);
+  const [editorBaseline,setEditorBaseline]=useState("");
+  const editorSignature=useMemo(()=>JSON.stringify({geometryVersion,areas,exclusionsJson,conflictsText,mode,lat,lon}),[geometryVersion,areas,exclusionsJson,conflictsText,mode,lat,lon]);
+  const editorDirty=editorBaseline!==""&&editorSignature!==editorBaseline;
+  useEffect(()=>setDirty("climatology",editorDirty),[editorDirty,setDirty]);
+  const load=useCallback(async()=>{try{const [s,d]=await Promise.all([getV3Status(spotId),getV3Directions(spotId)]);setStatus(s);setDirs(d);const geometry=d.geometry;const nextGeometryVersion=geometry?.geometry_version??"1";const nextAreas=geometry?.start_areas??[];const nextExclusions=JSON.stringify(geometry?.exclusions??[],null,2);const nextConflicts=(geometry?.conflicts??[]).join("\n");const nextMode=s.cell?.mode??"automatic";const nextLat=String(s.cell?.requested[0]??"");const nextLon=String(s.cell?.requested[1]??"");setGeometryVersion(nextGeometryVersion);setAreas(nextAreas);setInvalidGeometry([]);setExclusionsJson(nextExclusions);setConflictsText(nextConflicts);setMode(nextMode);setLat(nextLat);setLon(nextLon);setEditorBaseline(JSON.stringify({geometryVersion:nextGeometryVersion,areas:nextAreas,exclusionsJson:nextExclusions,conflictsText:nextConflicts,mode:nextMode,lat:nextLat,lon:nextLon}));markClean("climatology");}catch(e){setMessage(errorText(e));}},[spotId,markClean]);
   useEffect(()=>{void load();},[load]);
+  useAdminRealtimeRefresh(load,!editorDirty&&busy===null);
   useEffect(()=>{if(!status?.active)return;let cancelled=false;getV3Variant(spotId,min,max,directionMode).then(v=>{if(!cancelled)setVariant(v)}).catch(e=>{if(!cancelled){setVariant(null);setMessage(errorText(e));}});return()=>{cancelled=true}},[spotId,status?.active,min,max,directionMode]);
   useEffect(()=>{if(!status?.active||directionMode!=="usable"){setAllComparison(null);return;}getV3Variant(spotId,min,max,"all").then(setAllComparison).catch(()=>setAllComparison(null));},[spotId,status?.active,min,max,directionMode]);
-  useEffect(()=>{if(!status || !["pending","processing","refresh_pending","refresh_processing"].includes(status.state))return;const timer=window.setInterval(()=>void load(),2500);return()=>window.clearInterval(timer)},[status,load]);
+  useEffect(()=>{if(editorDirty||!status || !["pending","processing","refresh_pending","refresh_processing"].includes(status.state))return;const timer=window.setInterval(()=>void load(),2500);return()=>window.clearInterval(timer)},[status,load,editorDirty]);
   const state=STATE[status?.state??"not_calculated"]??[status?.state??"Unbekannt","neutral" as BadgeTone];
   const emptyArea=():V3StartArea=>({name:"",start_area:{},usable_water:{},shoreline:{},waterward_normal_deg:0,source:{label:"",url:""}});
   const updateArea=(index:number,patch:Partial<V3StartArea>)=>setAreas(current=>current.map((area,i)=>i===index?{...area,...patch}:area));
@@ -77,7 +86,7 @@ export default function AdminWindClimatologyV3() {
     const base=allComparison.variant.weeks[index]; return (week.reliability_percent??0)>(base?.reliability_percent??0)|| (week.median_session_hours??0)>(base?.median_session_hours??0);
   }),[directionMode,variant,allComparison]);
   if(!status||!dirs)return <p role="status" className="text-admin-muted">Windklimatologie wird geladen …</p>;
-  return <div className="pb-12"><Link to={`/admin/spot/${spotId}/edit`} className="text-admin-primary underline">← Zurück zum Spot</Link>
+  return <div className="pb-12"><UnsavedChangesDialog blocker={blocker}/><Link to={`/admin/spot/${spotId}/edit`} className="text-admin-primary underline">← Zurück zum Spot</Link>
     <div className="mt-4 flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-2xl font-semibold">Windklimatologie V3</h1><p className="mt-1 max-w-3xl text-ui text-admin-muted">Administrative Shadow-Vorschau. Öffentlich bleibt weiterhin V2 aktiv.</p></div><Button variant="primary" onClick={recalc} disabled={busy!==null}>{busy==="run"?"Wird eingeplant …":"V3 neu berechnen"}</Button></div>
     {message&&<p role="status" className="mt-4 rounded-md border border-admin-border bg-admin-surface p-3 text-label">{message}</p>}
     <section className="mt-6 rounded-lg border border-admin-border bg-admin-surface p-4"><div className="flex flex-wrap gap-2"><Badge tone={state[1]}>{state[0]}</Badge>{status.directions.usable_available?<Badge tone="success">Nutzbare Richtungen aktiv</Badge>:<Badge tone="warning">Keine aktiven nutzbaren Richtungen</Badge>}</div>

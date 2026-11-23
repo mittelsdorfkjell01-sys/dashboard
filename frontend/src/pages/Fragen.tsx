@@ -1,12 +1,23 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 
 import LandingHeader from "../components/LandingHeader";
 import Footer from "../components/Footer";
-import { ChevronDownIcon, SafetyIcon } from "../lib/icons";
+import { ChevronDownIcon, MenuIcon, SafetyIcon } from "../lib/icons";
 import { getLenis } from "../lib/lenis";
+import PageBackLink from "../components/PageBackLink";
+import ScrollBackButton from "../components/ScrollBackButton";
 import type { TranslationKey } from "../lib/i18n";
+import { HELP_ANCHOR, HELP_JUMP } from "../lib/infoSections";
 
 /**
  * "Daten & Fragen" — the single public page for help, project background and
@@ -21,15 +32,24 @@ import type { TranslationKey } from "../lib/i18n";
  *
  * Shape: a safety block that is deliberately *open* (it is the one statement
  * with liability weight and must not hide behind a closed accordion), then the
- * project as prose, then seven question/answer accordions, and contact as its
- * own last section.
+ * project as prose, then seven question/answer accordions.
  *
- * Layout: the page runs the full `max-w-page` width with a side navigation —
- * pinned on a wide screen, a horizontally scrolling strip on a narrow one. The
- * body is one centred `max-w-measure-wide` column (82ch, a third wider than
- * the usual reading measure, which this page can afford because the nav frames
- * it). Everything inside shares that one width, headings and accordion rows
- * included, so nothing runs wider than the text it belongs to.
+ * Contact is NOT a section here any more: it is /kontakt (pages/Kontakt.tsx),
+ * its own page again. It is the one thing a visitor comes to *do* rather than
+ * read, it is its own entry in the site navigation, and as a section it sat at
+ * the bottom of a very long page behind everything else.
+ *
+ * Layout: the navigation column and the body are one centred unit — the grid
+ * carries `lg:max-w-measure-nav` (13.5rem nav + 3.5rem gap + the body measure)
+ * and `mx-auto`. Centring only the body *inside* the column left over beside
+ * the nav is what pushed the text ~130px right of the window centre. The body
+ * is one `max-w-measure-wide` column (92ch) and everything inside shares that
+ * width, headings and accordion rows included.
+ *
+ * Below `lg` the nav column is not rendered at all. Its links live in the
+ * bottom jump menu (`JumpMenu`), which replaced a horizontally scrolling strip
+ * above the text: there the later entries sat off-screen, and the strip had no
+ * room to say which section the reader was in.
  *
  * The section anchors are public URLs (RegionDetail links to
  * `#regionale-windverfuegbarkeit`, the footer to `#kontakt`), so they are
@@ -42,22 +62,12 @@ import type { TranslationKey } from "../lib/i18n";
  * accessibility duties attach.
  */
 
-/** Anchors are part of the URL contract — identical in every language. */
-const ANCHOR = {
-  safety: "sicherheit",
-  project: "projekt",
-  spots: "spots",
-  weather: "wetter",
-  season: "saison",
-  map: "karte",
-  account: "konto",
-  contribute: "mitmachen",
-  contact: "kontakt",
-  /** Entry-level anchors, linked from outside this page or from other answers. */
-  regionUnknown: "regionale-windverfuegbarkeit",
-  spotSuggest: "spot-vorschlagen",
-  community: "community-beitraege",
-} as const;
+const ANCHOR = HELP_ANCHOR;
+
+/** Contact was this page's last section until it became /kontakt again. Old
+ *  links and bookmarks still carry the former hash, so they are forwarded
+ *  instead of landing on a page that no longer has that section. */
+const LEGACY_CONTACT_ANCHOR = "kontakt";
 
 const LINK_CLASS = "font-semibold text-ink underline underline-offset-4 hover:opacity-70";
 
@@ -78,7 +88,7 @@ const LINK_COMPONENTS = {
   addSpots: <Link to="/konto/spots" className={LINK_CLASS} />,
   map: <Link to={{ hash: `#${ANCHOR.map}` }} className={LINK_CLASS} />,
   safety: <Link to={{ hash: `#${ANCHOR.safety}` }} className={LINK_CLASS} />,
-  contact: <Link to={{ hash: `#${ANCHOR.contact}` }} className={LINK_CLASS} />,
+  contact: <Link to="/kontakt" className={LINK_CLASS} />,
   account: <Link to={{ hash: `#${ANCHOR.account}` }} className={LINK_CLASS} />,
   contribute: <Link to={{ hash: `#${ANCHOR.contribute}` }} className={LINK_CLASS} />,
   spotSuggest: <Link to={{ hash: `#${ANCHOR.spotSuggest}` }} className={LINK_CLASS} />,
@@ -298,40 +308,20 @@ const SECTIONS: Section[] = [
   },
 ];
 
-/** Side-navigation order: every section, including the hand-laid-out ones. */
-const JUMP: { id: string; key: TranslationKey }[] = [
-  { id: ANCHOR.safety, key: "help.jump.safety" },
-  { id: ANCHOR.project, key: "help.jump.project" },
-  { id: ANCHOR.spots, key: "help.jump.spots" },
-  { id: ANCHOR.weather, key: "help.jump.weather" },
-  { id: ANCHOR.season, key: "help.jump.season" },
-  { id: ANCHOR.map, key: "help.jump.map" },
-  { id: ANCHOR.account, key: "help.jump.account" },
-  { id: ANCHOR.contribute, key: "help.jump.contribute" },
-  { id: ANCHOR.contact, key: "help.jump.contact" },
-];
+const JUMP = HELP_JUMP;
 
-const CONTACT_TOPICS: { term: TranslationKey; body: TranslationKey }[] = [
-  { term: "help.contact.topics.spotErrorTerm", body: "help.contact.topics.spotErrorBody" },
-  { term: "help.contact.topics.accountTerm", body: "help.contact.topics.accountBody" },
-  { term: "help.contact.topics.technicalTerm", body: "help.contact.topics.technicalBody" },
-  { term: "help.contact.topics.newSpotTerm", body: "help.contact.topics.newSpotBody" },
-  { term: "help.contact.topics.unlawfulTerm", body: "help.contact.topics.unlawfulBody" },
-  { term: "help.contact.topics.privacyTerm", body: "help.contact.topics.privacyBody" },
-  { term: "help.contact.topics.securityTerm", body: "help.contact.topics.securityBody" },
-];
-
-/** Same source as Impressum/Datenschutz — an unconfigured view says so rather
- *  than printing a dead placeholder address. */
-const CONTACT_EMAIL = (import.meta.env.VITE_LEGAL_EMAIL || "").trim();
-const EMAIL_CONFIGURED = CONTACT_EMAIL !== "" && !CONTACT_EMAIL.endsWith(".invalid");
+/** Id of the bottom jump menu's panel, for `aria-controls` on its trigger. */
+const JUMP_MENU_ID = "help-jump-menu";
 
 // --- page ------------------------------------------------------------------
 
 export default function Fragen() {
   const { t, i18n } = useTranslation();
-  const { hash } = useLocation();
+  const location = useLocation();
+  const { hash } = location;
+  const navigate = useNavigate();
   const target = hash ? decodeURIComponent(hash.slice(1)) : "";
+
 
   useEffect(() => {
     document.title = `${t("help.title")} — surfwind data`;
@@ -347,15 +337,64 @@ export default function Fragen() {
     const el = document.getElementById(target);
     if (!el) return;
     const lenis = getLenis();
-    if (lenis) lenis.scrollTo(el, { offset: -80 });
-    else el.scrollIntoView();
+    // `lenis.resize()` for the same reason as in ScrollManager: this page was
+    // not in the DOM when Lenis last measured, so without it the jump clamps
+    // against a stale limit and does nothing.
+    if (lenis) {
+      lenis.resize();
+      lenis.scrollTo(el, { offset: -80 });
+    } else {
+      el.scrollIntoView();
+    }
   }, [target]);
 
-  // Which section the reader is in, so the side navigation says where they
+  // Contact left this page; the hash it used to answer to still travels in
+  // bookmarks, old mails and the former /kontakt redirect.
+  useEffect(() => {
+    if (target === LEGACY_CONTACT_ANCHOR) navigate("/kontakt", { replace: true });
+  }, [target, navigate]);
+
+  // Which section the reader is in, so the navigation says where they
   // are. An observer rather than a scroll handler: no work on frames where
   // nothing crossed. The band is the upper third of the viewport, which is
   // where a heading sits once it has been scrolled to.
   const [active, setActive] = useState<string>(JUMP[0].id);
+
+  // A jump is a ~1.2s Lenis animation (ScrollManager owns it). The observer
+  // only ever reports where the reader *is*, so while that animation ran the
+  // marker stayed on the entry the reader came from — clicking down the list
+  // left the white rule one entry behind the whole way. Scrolling by hand was
+  // never affected, because then "where the reader is" is the answer.
+  //
+  // So the clicked entry becomes current on the click, and the observer is
+  // held back until the travel actually arrives there. The timeout is the
+  // release valve for a target the page cannot scroll far enough to reach
+  // (the last section on a tall window): the observer takes over again
+  // instead of the marker staying stuck on a section nobody is in.
+  const travellingTo = useRef<string | null>(null);
+  const travelTimer = useRef<number | null>(null);
+  const endTravel = useCallback(() => {
+    travellingTo.current = null;
+    if (travelTimer.current !== null) window.clearTimeout(travelTimer.current);
+    travelTimer.current = null;
+  }, []);
+  const jumpTo = useCallback(
+    (id: string) => {
+      setActive(id);
+      travellingTo.current = id;
+      if (travelTimer.current !== null) window.clearTimeout(travelTimer.current);
+      travelTimer.current = window.setTimeout(endTravel, 2000);
+    },
+    [endTravel],
+  );
+  useEffect(() => endTravel, [endTravel]);
+
+  // A deep link arrives mid-travel too: mark its section at once rather than
+  // letting the marker sit on the first entry until the scroll lands.
+  useEffect(() => {
+    if (target && JUMP.some((entry) => entry.id === target)) jumpTo(target);
+  }, [target, jumpTo]);
+
   useEffect(() => {
     const sections = JUMP.map((entry) => document.getElementById(entry.id)).filter(
       (el): el is HTMLElement => el !== null,
@@ -366,23 +405,30 @@ export default function Fragen() {
       (entries) => {
         for (const entry of entries) seen.set(entry.target.id, entry.isIntersecting);
         const current = JUMP.find((entry) => seen.get(entry.id));
-        if (current) setActive(current.id);
+        if (!current) return;
+        const travelling = travellingTo.current;
+        if (travelling && travelling !== current.id) return;
+        if (travelling) endTravel();
+        setActive(current.id);
       },
       { rootMargin: "-96px 0px -66% 0px" },
     );
     for (const el of sections) observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [endTravel]);
 
   return (
     <div className="relative min-h-screen bg-page">
       <LandingHeader onLight />
       <main className="mx-auto max-w-page px-4 pb-24 pt-32 sm:px-8">
-        {/* One grid, one nav landmark. Narrow: a single column, the nav a
-            horizontally scrolling strip above the content (the strip scrolls,
-            never the page). Wide: a column beside it. Same links, same 44px
-            targets — only the direction changes, so there is no second copy of
-            the navigation to keep in step.
+        {/* One grid, centred as a whole: nav column + gap + body measure. The
+            body alone used to be `mx-auto` inside the column *beside* the nav,
+            which reads as off-centre on a wide window — the text has to be
+            centred against the window, not against the leftover space.
+
+            The nav column exists from `lg` up only; below that the same links
+            are in the bottom jump menu, so there is one copy of the list
+            (JUMP) and never two live navigations at once.
 
             On a wide screen the nav never moves. It used to drift: `sticky`
             with a `top` *above* its own starting point scrolls along until it
@@ -394,23 +440,24 @@ export default function Fragen() {
             then auto-places the body in the first column, and the text ends up
             216px wide. Sticky keeps it a grid item. It scrolls inside itself
             on a short window so the last entry stays reachable. */}
-        <div className="grid gap-8 lg:grid-cols-[13.5rem_minmax(0,1fr)] lg:gap-14">
+        <div className="mx-auto grid w-full gap-8 lg:max-w-measure-nav lg:grid-cols-[13.5rem_minmax(0,1fr)] lg:gap-14">
           <nav
             aria-label={t("help.jump.label")}
-            className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 lg:mx-0 lg:sticky lg:top-32 lg:max-h-[calc(100vh-11rem)] lg:self-start lg:overflow-y-auto lg:overflow-x-visible lg:px-0"
+            className="hidden lg:sticky lg:top-32 lg:block lg:max-h-[calc(100vh-11rem)] lg:self-start lg:overflow-y-auto lg:px-0"
           >
-            <ul className="flex w-max gap-2 lg:w-auto lg:flex-col lg:gap-0.5">
+            <ul className="flex flex-col gap-0.5">
               {JUMP.map((entry) => {
                 const current = entry.id === active;
                 return (
                   <li key={entry.id}>
                     <Link
                       to={{ hash: `#${entry.id}` }}
+                      onClick={() => jumpTo(entry.id)}
                       aria-current={current ? "true" : undefined}
-                      className={`inline-flex min-h-11 items-center rounded-card border px-3 text-ui font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink lg:w-full lg:border-0 lg:border-l-2 lg:rounded-none lg:px-3 ${
+                      className={`flex min-h-11 w-full items-center border-l-2 px-3 text-ui font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                         current
-                          ? "border-line bg-band text-ink lg:border-ink lg:bg-transparent lg:font-semibold"
-                          : "border-line text-ink hover:bg-band lg:border-transparent lg:text-ink-soft lg:hover:text-ink"
+                          ? "border-ink font-semibold text-ink"
+                          : "border-transparent text-ink-soft hover:text-ink"
                       }`}
                     >
                       {t(entry.key)}
@@ -425,6 +472,8 @@ export default function Fragen() {
             {/* The title sits above the body column and shares its width, so
                 it reads as that column's heading instead of floating at the
                 far left edge of a 1570px page. */}
+            <PageBackLink className="mb-2" />
+            <ScrollBackButton />
             <h1 className="text-title font-semibold text-ink">{t("help.title")}</h1>
             <p className="mt-2 text-ui text-ink-soft">{t("help.lede")}</p>
 
@@ -494,33 +543,6 @@ export default function Fragen() {
           </Band>
         ))}
 
-        {/* 9 — Contact: its own last section, the operator mailbox first and
-            "what is it about" underneath. */}
-        <Band id={ANCHOR.contact} title={t("help.section.contact")}>
-          <p className="text-body leading-relaxed text-ink-soft">
-            {t("help.contact.intro")}
-          </p>
-          <ContactCard />
-
-          <h3 className="mt-10 text-body font-semibold text-ink">{t("help.contact.topicsTitle")}</h3>
-          <p className="mt-1 text-ui text-muted">{t("help.contact.topicsHint")}</p>
-          <dl className="mt-5 space-y-5">
-            {CONTACT_TOPICS.map((topic) => (
-              <div key={topic.term}>
-                <dt className="text-ui font-semibold text-ink">{t(topic.term)}</dt>
-                <dd className="mt-1 text-ui leading-relaxed text-ink-soft">
-                  <RichText i18nKey={topic.body} components={LINK_COMPONENTS} />
-                </dd>
-              </div>
-            ))}
-          </dl>
-
-          <div className="mt-8 border-t border-line pt-5">
-            <p className="text-ui text-muted">{t("help.contact.responseTime")}</p>
-            <p className="mt-2 text-ui text-muted">{t("help.contact.notEmergency")}</p>
-          </div>
-        </Band>
-
         <div className="mt-16 border-t border-line pt-8">
           <p className="text-lead text-ink-soft">{t("help.outro.claim")}</p>
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
@@ -541,6 +563,7 @@ export default function Fragen() {
           </div>
         </div>
       </main>
+      <JumpMenu active={active} onJump={jumpTo} />
       <Footer />
     </div>
   );
@@ -633,63 +656,288 @@ function Entry({ item, openTarget }: { item: Item; openTarget: string }) {
   );
 }
 
-/** The operator mailbox: a `mailto:` plus copy-to-clipboard, with an honest
- *  message when VITE_LEGAL_EMAIL is unset in a development view. */
-function ContactCard() {
-  const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
-  const [copyError, setCopyError] = useState(false);
+/**
+ * The jump navigation below `lg`: a small pill at the bottom edge that opens a
+ * panel with the same JUMP entries.
+ *
+ * It replaced a horizontally scrolling strip of keywords above the text. That
+ * strip put four of its nine entries off-screen, gave no sense of where the
+ * reader was, and competed with the page's own vertical scroll. The pattern
+ * here is the one the admin spot form uses (components/admin/FormNavBar) —
+ * reachable at any scroll position without travelling back to the top —
+ * rendered in the public tokens instead of the admin ones.
+ *
+ * Deliberately bare: eight section names, nothing else. The panel used to
+ * carry a title row, a close button and a filter field — three pieces of
+ * chrome around a list that is shorter than the chrome, on the one viewport
+ * where space is scarce. Dismissal is where a phone already expects it: the
+ * pill itself, a tap beside the panel, a swipe down over it, Esc.
+ *
+ * It grows out of the pill on a native CSS transition (house easing, a longer
+ * duration than the house panel step — see the panel below), and the swipe is
+ * hand-rolled on pointer events — the same reasoning as the mobile search
+ * sheet: a compositor transform stays smooth on a busy main thread, where a
+ * JS-driven animation stutters.
+ *
+ * Mounted only below `lg` (the wrapper is `lg:hidden`), so no handler of this
+ * menu is alive on a desktop viewport, where the sticky column is the
+ * navigation — a hidden-but-mounted second menu is how an invisible overlay
+ * starts eating taps.
+ */
+const JUMP_MENU_MS = 440; // longer than --sw-dur-slow on purpose: see the panel's note
 
-  const copy = async () => {
-    setCopyError(false);
+function JumpMenu({ active, onJump }: { active: string; onJump: (id: string) => void }) {
+  const { t } = useTranslation();
+  // `mounted` = in the DOM, `shown` = at rest. The two are separate so the
+  // panel can animate in from its closed state and animate out before it goes.
+  const [mounted, setMounted] = useState(false);
+  const [shown, setShown] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const unmountTimer = useRef<number | null>(null);
+
+  const reduce = () =>
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const close = useCallback(() => {
+    setShown(false);
+    triggerRef.current?.focus();
+    if (unmountTimer.current !== null) window.clearTimeout(unmountTimer.current);
+    unmountTimer.current = window.setTimeout(() => setMounted(false), reduce() ? 0 : JUMP_MENU_MS);
+  }, []);
+
+  const open = useCallback(() => {
+    if (unmountTimer.current !== null) {
+      window.clearTimeout(unmountTimer.current);
+      unmountTimer.current = null;
+    }
+    setMounted(true);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (unmountTimer.current !== null) window.clearTimeout(unmountTimer.current);
+    },
+    [],
+  );
+
+  // Raise it one frame after it lands in the DOM, so the browser has a closed
+  // state to animate *from* instead of painting the open one straight away.
+  useEffect(() => {
+    if (!mounted) return;
+    const frame = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(frame);
+  }, [mounted]);
+
+  // Esc closes, like every other overlay on the site.
+  useEffect(() => {
+    if (!mounted) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [mounted, close]);
+
+  // Focus moves into the panel so a keyboard lands on the list.
+  useEffect(() => {
+    if (shown) panelRef.current?.focus();
+  }, [shown]);
+
+  // Eight entries fit, so the list does not scroll and the panel can claim the
+  // vertical gesture for the swipe-down (without `touch-action: none` the
+  // browser takes the pan for itself and cancels the pointer stream mid-drag).
+  // If a large text setting ever makes the list overflow, scrolling it wins
+  // over the swipe — the pill, a tap beside it and Esc still close the menu.
+  const [scrollable, setScrollable] = useState(false);
+  useEffect(() => {
+    if (!shown) return;
+    const list = listRef.current;
+    setScrollable(Boolean(list && list.scrollHeight > list.clientHeight + 1));
+  }, [shown]);
+
+  // Swipe-down-to-dismiss, imperative: no React state changes while a finger
+  // is on the panel, so nothing re-renders mid-gesture. The list hands the
+  // gesture over only when it is scrolled to the top and the thumb travels
+  // clearly downward, so an upward swipe still scrolls a long list.
+  const dragRef = useRef({ startY: 0, lastY: 0, lastT: 0, vy: 0, active: false });
+  const pressRef = useRef<{ y: number; id: number } | null>(null);
+  const moveRaf = useRef(0);
+  const pendingY = useRef(0);
+
+  const settle = (el: HTMLElement, closing: boolean) => {
+    el.style.transition = `transform ${JUMP_MENU_MS}ms var(--sw-ease), opacity var(--sw-dur-slow) var(--sw-ease)`;
+    el.style.transform = closing ? "translateY(120%)" : "translateY(0) scale(1)";
+    if (closing) el.style.opacity = "0";
+  };
+
+  const beginDrag = (clientY: number, pointerId: number) => {
+    const el = panelRef.current;
+    if (!el) return;
+    dragRef.current = { startY: clientY, lastY: clientY, lastT: performance.now(), vy: 0, active: true };
+    el.style.transition = "none"; // follow the finger 1:1
     try {
-      await navigator.clipboard.writeText(CONTACT_EMAIL);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2500);
+      // Capturing here also keeps the release from landing as a click on the
+      // section link the gesture happened to start on.
+      el.setPointerCapture(pointerId);
     } catch {
-      setCopyError(true);
+      /* Safari < 16 without capture still works via the element's own events. */
     }
   };
 
-  if (!EMAIL_CONFIGURED) {
-    return (
-      <section className="mt-6 rounded-card border border-line bg-surface p-5 sm:p-6">
-        <p role="status" className="text-ui text-muted">
-          {t("help.contact.unconfigured")}
-        </p>
-      </section>
-    );
-  }
+  const moveDrag = (clientY: number) => {
+    const d = dragRef.current;
+    if (!d.active) return;
+    const now = performance.now();
+    const dt = now - d.lastT;
+    if (dt > 0) d.vy = (clientY - d.lastY) / dt; // px/ms, for the flick check
+    d.lastY = clientY;
+    d.lastT = now;
+    pendingY.current = clientY;
+    if (!moveRaf.current) {
+      moveRaf.current = requestAnimationFrame(() => {
+        moveRaf.current = 0;
+        const el = panelRef.current;
+        if (el && dragRef.current.active) {
+          el.style.transform = `translateY(${Math.max(0, pendingY.current - dragRef.current.startY)}px)`;
+        }
+      });
+    }
+  };
+
+  const endDrag = () => {
+    pressRef.current = null;
+    const d = dragRef.current;
+    if (!d.active) return;
+    d.active = false;
+    if (moveRaf.current) {
+      cancelAnimationFrame(moveRaf.current);
+      moveRaf.current = 0;
+    }
+    const dy = d.lastY - d.startY;
+    const closing = dy > 56 || (dy > 24 && d.vy > 0.4);
+    const el = panelRef.current;
+    if (el) settle(el, closing && !reduce());
+    if (closing) close();
+  };
+
+  const onPanelPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    pressRef.current = { y: event.clientY, id: event.pointerId };
+  };
+  const onPanelPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (dragRef.current.active) {
+      moveDrag(event.clientY);
+      return;
+    }
+    const press = pressRef.current;
+    if (!press) return;
+    if ((listRef.current?.scrollTop ?? 0) <= 0 && event.clientY - press.y > 14) {
+      beginDrag(press.y, press.id);
+      moveDrag(event.clientY);
+    }
+  };
 
   return (
-    <section className="mt-6 rounded-card border border-line bg-surface p-5 sm:p-6">
-      <p className="text-caption font-semibold uppercase tracking-caps text-muted">
-        {t("help.contact.emailLabel")}
-      </p>
-      <p className="mt-2 break-all text-lead font-semibold text-ink">
-        <a href={`mailto:${CONTACT_EMAIL}`} className="underline underline-offset-4 hover:opacity-70">
-          {CONTACT_EMAIL}
-        </a>
-      </p>
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-        <a
-          href={`mailto:${CONTACT_EMAIL}`}
-          className="inline-flex min-h-11 items-center justify-center rounded-card bg-ink px-5 text-ui font-semibold text-surface transition-opacity hover:opacity-90"
-        >
-          {t("help.contact.write")}
-        </a>
-        <button
-          type="button"
-          onClick={() => void copy()}
-          className="inline-flex min-h-11 items-center justify-center rounded-card border border-line bg-surface px-5 text-ui font-semibold text-ink transition-colors hover:bg-band"
-        >
-          {t("help.contact.copy")}
-        </button>
-      </div>
-      <p role="status" aria-live="polite" className="mt-3 min-h-5 text-ui text-muted">
-        {copied && t("help.contact.copied")}
-        {copyError && t("help.contact.copyFailed")}
-      </p>
-    </section>
+    <div className="lg:hidden">
+      {mounted && (
+        <>
+          {/* Tap anywhere beside the panel closes. A real element rather than a
+              document listener, so nothing of this menu is listening once it is
+              shut. */}
+          <button
+            type="button"
+            aria-label={t("help.jump.close")}
+            onClick={close}
+            style={{ transition: "opacity var(--sw-dur-slow) var(--sw-ease)", opacity: shown ? 1 : 0 }}
+            className="fixed inset-0 z-scrim bg-ink/25 backdrop-blur-[3px]"
+          />
+          {/* The outer box owns the position, the inner panel the motion: a
+              Tailwind `-translate-x-1/2` on the moving element would be
+              overwritten by every frame of the drag. */}
+          <div className="fixed bottom-24 left-1/2 z-overlay -translate-x-1/2">
+            <div
+              ref={panelRef}
+              tabIndex={-1}
+              data-lenis-prevent
+              role="dialog"
+              aria-label={t("help.jump.label")}
+              id={JUMP_MENU_ID}
+              onPointerDown={onPanelPointerDown}
+              onPointerMove={onPanelPointerMove}
+              onPointerUp={endDrag}
+              onPointerCancel={endDrag}
+              style={{
+                willChange: "transform",
+                transition: `transform ${JUMP_MENU_MS}ms var(--sw-ease), opacity var(--sw-dur-slow) var(--sw-ease)`,
+                // It grows out of the pill that opened it, so the origin is the
+                // pill's edge and the closed state is small and low. Longer
+                // than the house panel duration (300ms) because the travel is
+                // longer too — a rise this large reads as a jump at 300ms.
+                transformOrigin: "bottom center",
+                transform: shown ? "translateY(0) scale(1)" : "translateY(28px) scale(0.86)",
+                opacity: shown ? 1 : 0,
+              }}
+              className="flex max-h-[min(70vh,30rem)] w-[min(86vw,20rem)] flex-col rounded-card border border-line bg-page shadow-float focus:outline-none"
+            >
+              <ul
+                ref={listRef}
+                data-lenis-prevent
+                // The list is the scroll container, so the browser reads the
+                // gesture rules here — not on the panel around it.
+                style={{ touchAction: scrollable ? "pan-y" : "none" }}
+                className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-2"
+              >
+                {JUMP.map((entry) => {
+                  const current = entry.id === active;
+                  return (
+                    <li key={entry.id}>
+                      <Link
+                        to={{ hash: `#${entry.id}` }}
+                        aria-current={current ? "true" : undefined}
+                        // A swipe over the panel starts on one of these links,
+                        // and the browser answers a drag off a link with its
+                        // own native link-drag: that fires `dragstart` and
+                        // cancels the pointer stream mid-gesture, so the swipe
+                        // never reached its threshold and the menu stayed open.
+                        draggable={false}
+                        onClick={() => {
+                          onJump(entry.id);
+                          close();
+                        }}
+                        className={`flex min-h-11 items-center rounded-card px-3 py-2 text-ui transition-colors hover:bg-band ${
+                          current ? "bg-band font-semibold text-ink" : "text-ink-soft"
+                        }`}
+                      >
+                        {t(entry.title)}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Same floating pill as the "Karte" control on the landing, results and
+          spot-data pages: filled page colour, no stroke, travels with the
+          scroll. One control per page, so they never meet.
+
+          It sits on the panel's layer, not the page's: at `z-sticky` the open
+          menu's scrim covered it, so the control that opened the menu could
+          not close it again — the tap landed on the scrim instead. */}
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => (mounted ? close() : open())}
+        aria-label={t("help.jump.menuOpen")}
+        aria-expanded={mounted}
+        aria-controls={JUMP_MENU_ID}
+        className="fixed bottom-6 left-1/2 z-overlay flex min-h-11 -translate-x-1/2 items-center gap-1.5 rounded-card bg-page px-4 py-2 text-ui font-normal text-ink shadow-float"
+      >
+        {t("help.jump.menu")} <MenuIcon className="text-body" />
+      </button>
+    </div>
   );
 }

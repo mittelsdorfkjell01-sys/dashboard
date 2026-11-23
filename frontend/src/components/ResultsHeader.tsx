@@ -51,12 +51,16 @@ export default function ResultsHeader() {
 
           {/* Mobile: icon-only, centred on the header row itself (not the
               middle grid track, which is off-centre — logo and account menu
-              aren't the same width). */}
+              aren't the same width). On narrow phones the true centre lies
+              inside the wordmark (≈10.7rem wide from the row's left edge): at
+              320px the glyph sat on "data" and at 360–390px its 44px target
+              still overlapped the logo link. `max()` keeps it centred where
+              there is room and otherwise slides it just clear of the logo. */}
           <button
             type="button"
             onClick={(event) => openMobileSearch(event.currentTarget)}
             aria-label="Suche öffnen"
-            className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center text-ink active:scale-[0.97] sm:hidden"
+            className="absolute left-[max(50%,12.5rem)] top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center text-ink active:scale-[0.97] sm:hidden"
           >
             <SearchIcon className="text-lead" />
           </button>

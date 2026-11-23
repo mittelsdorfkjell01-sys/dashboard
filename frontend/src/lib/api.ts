@@ -595,6 +595,59 @@ export const getRecommendations = (params: RecommendationQuery) =>
 
 export const getSpot = (id: string) => request<SpotRead>(`/spots/${id}`);
 
+export type MapPoiCategory = "parking" | "cafe" | "bar" | "surf_school" | "campsite";
+
+export interface MapPoi {
+  id: string;
+  category: MapPoiCategory;
+  name: string | null;
+  lat: number;
+  lon: number;
+  distance_m: number;
+  osm_url: string;
+  /** Details exactly as mapped in OpenStreetMap. Missing means "not recorded",
+   *  never "no". Older cached responses may omit them entirely. */
+  opening_hours?: string | null;
+  website?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  cuisine?: string[];
+  outdoor_seating?: boolean | null;
+  wheelchair?: "yes" | "limited" | "no" | null;
+  fee?: boolean | null;
+  capacity?: number | null;
+  takeaway?: "yes" | "no" | "only" | null;
+  wifi?: boolean | null;
+  vegetarian?: "yes" | "no" | "only" | "limited" | null;
+  vegan?: "yes" | "no" | "only" | "limited" | null;
+  dogs?: "yes" | "no" | "leashed" | null;
+  card_payment?: boolean | null;
+  toilets?: boolean | null;
+  reservation?: "yes" | "no" | "required" | "recommended" | null;
+  smoking?: "yes" | "no" | "outside" | "separated" | "isolated" | null;
+  instagram?: string | null;
+  /** When a mapper last confirmed the entry on site (YYYY-MM[-DD]). */
+  check_date?: string | null;
+}
+
+export interface MapPoisResponse {
+  items: MapPoi[];
+  source: "OpenStreetMap";
+  attribution: string;
+  /** OSM is community-maintained and cannot guarantee complete local coverage. */
+  incomplete: true;
+}
+
+export const getMapPois = (
+  lat: number,
+  lon: number,
+  radiusM = 3_000,
+  signal?: AbortSignal,
+) => request<MapPoisResponse>(`/map/pois${qs({ lat, lon, radius_m: radiusM })}`, {
+  signal,
+  timeoutMs: 12_000,
+});
+
 export type WindWindowKey = "10_15" | "15_20" | "20_30" | "30_plus";
 export interface WindClimatologySection {
   month: number; section: number; day_start: number; day_end: number | "month_end";
@@ -1260,6 +1313,8 @@ export interface AdminOverview {
 }
 
 export const getAdminOverview = () => request<AdminOverview>(`/admin/overview`);
+export const getAdminRealtimeVersion = () =>
+  request<{ revision: number }>(`/admin/realtime/version`, { timeoutMs: 5_000 });
 
 export interface V3RunView {
   id: string; status: string; period: [number, number]; algorithm_version: string;

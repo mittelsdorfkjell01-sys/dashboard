@@ -9,10 +9,6 @@ import MeteogramWindBar, {
 import { CloseIcon } from "../../lib/icons";
 import { tempValue, waveValue, windValue, WAVE_UNIT_SUFFIX, WIND_UNIT_SUFFIX, type TempUnit, type WaveUnit, type WindUnit } from "../../lib/units";
 import { dayRuns, type MapForecastSlot } from "./slots";
-// The sheet borrows the spot Daten page's dark instrument palette by class, so
-// the wind bars, captions and values read exactly as they do in the Spot-Daten
-// forecast instead of being a second, slightly different dark.
-import "../../components/data/daten/daten-theme.css";
 
 const WEEKDAY = new Intl.DateTimeFormat("de-DE", { weekday: "short" });
 const LONG_WEEKDAY = new Intl.DateTimeFormat("de-DE", { weekday: "long" });
@@ -21,10 +17,17 @@ const COL_W = METEOGRAM_COLUMN_WIDTH;
 const TEMP_ROW_H = 24;
 
 /**
- * The map's one panel: a quiet dark sheet docked at the bottom edge, opened by
+ * The map's one panel: a quiet sheet docked at the bottom edge, opened by
  * tapping the map — open water (a coordinate) or a spot dot. It is a forecast
  * and nothing else: a caption line saying WHERE, one fine line saying what the
  * selected hour holds, and the hourly wind bars.
+ *
+ * It is the house light surface, the same panel the spot map docks at the
+ * bottom. Until 2026-11-16 it borrowed the Daten page's dark instrument
+ * palette (`daten-dark`), so switching Spots → Wind swapped ground, accent and
+ * text colours mid-page on a map that is light in both site themes. DESIGN.md
+ * asks the map's panels to follow the shared component rules; the dark glass
+ * was the one piece on the map that did not.
  *
  * Wind uses the same full-size bar primitive and geometry as the Spot-Daten
  * meteogram, including its values inside the wind and gust bands.
@@ -71,7 +74,7 @@ export default function MapForecastSheet({
   ), [slots]);
 
   return (
-    <aside className="swd-wx-sheet daten-dark" aria-label={`Vorhersage ${title}`}>
+    <aside className="swd-wx-sheet" aria-label={`Vorhersage ${title}`}>
       <div className="flex items-start gap-3 px-3 pt-2.5">
         <div className="min-w-0 flex-1">
           <p className="truncate text-caption font-medium text-ink">
@@ -179,16 +182,16 @@ function MapWindBars({
             aria-pressed={selected}
             aria-label={`${slot.localTime} Uhr${slot.wind == null ? "" : ` — Wind ${windValue(slot.wind, windUnit)} ${WIND_UNIT_SUFFIX[windUnit]}${slot.gust == null ? "" : `, Böen ${windValue(slot.gust, windUnit)}`}`}`}
             onClick={() => onSelect(slot.utcKey)}
-            className={`flex shrink-0 flex-col items-center rounded-card ${selected ? "bg-white/10" : ""} focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal`}
+            className={`flex shrink-0 flex-col items-center rounded-card ${selected ? "bg-band" : ""} focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal`}
             style={{ width: COL_W }}
           >
-            <span className="flex items-center justify-center font-semibold tabular-nums leading-none" style={{ height: TEMP_ROW_H, fontSize: 11 }}>
+            <span className="flex items-center justify-center text-micro font-semibold leading-none tabular-nums text-ink-soft" style={{ height: TEMP_ROW_H }}>
               {slot.air == null ? "" : `${tempValue(slot.air, tempUnit)}°`}
             </span>
             <span className="flex items-end" style={{ height: METEOGRAM_WIND_BASE_HEIGHT + proportionalHeight + METEOGRAM_WIND_HEADROOM, paddingTop: METEOGRAM_WIND_HEADROOM }}>
               {slot.wind != null && <MeteogramWindBar wind={slot.wind} gust={slot.gust} maximum={maximum} windUnit={windUnit} proportionalHeight={proportionalHeight} />}
             </span>
-            <span className="mt-1 leading-none tabular-nums text-on-photo-muted text-micro" style={{ height: 10 }}>
+            <span className="mt-1 text-micro leading-none tabular-nums text-muted" style={{ height: 10 }}>
               {slot.localHour % 2 === 0 ? slot.localTime.slice(0, 2) : ""}
             </span>
           </button>
@@ -222,16 +225,16 @@ function WaveForecastBars({
             aria-pressed={selected}
             aria-label={`${slot.localTime} Uhr${slot.swell == null ? "" : ` — ${waveValue(slot.swell, waveUnit)} ${WAVE_UNIT_SUFFIX[waveUnit]}`}`}
             onClick={() => onSelect(slot.utcKey)}
-            className={`flex shrink-0 flex-col items-center rounded-card ${selected ? "bg-white/10" : ""} focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal`}
+            className={`flex shrink-0 flex-col items-center rounded-card ${selected ? "bg-band" : ""} focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal`}
             style={{ width: COL_W }}
           >
-            <span className="mb-0.5 leading-none tabular-nums text-on-photo-muted text-micro" style={{ height: 10 }}>
+            <span className="mb-0.5 text-micro leading-none tabular-nums text-muted" style={{ height: 10 }}>
               {slot.swell == null ? "" : waveValue(slot.swell, waveUnit)}
             </span>
             <span className="flex items-end" style={{ height: 31 }}>
               {slot.swell != null && <span className="w-2.5 rounded-card bg-teal" style={{ height }} />}
             </span>
-            <span className="mt-1 leading-none tabular-nums text-on-photo-muted text-micro" style={{ height: 10 }}>
+            <span className="mt-1 text-micro leading-none tabular-nums text-muted" style={{ height: 10 }}>
               {slot.localHour % 2 === 0 ? slot.localTime.slice(0, 2) : ""}
             </span>
           </button>

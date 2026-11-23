@@ -2,6 +2,7 @@ import { Component, lazy, Suspense, useEffect, useRef, useState, type CSSPropert
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import LandingHeader from "../components/LandingHeader";
+import ScrollBackButton from "../components/ScrollBackButton";
 import SpotTabs from "../components/SpotTabs";
 import DatenPage from "../components/data/daten/DatenPage";
 import SpotGalleryTile from "../components/SpotGalleryTile";
@@ -198,13 +199,14 @@ export default function SpotDetail() {
             type="button"
             onClick={goBack}
             aria-label="Zurück"
-            className="pointer-events-auto inline-flex h-11 w-11 items-center justify-center gap-1.5 bg-transparent p-0 text-ui font-medium text-white transition-colors hover:text-on-photo sm:h-auto sm:w-auto sm:justify-start sm:rounded-card sm:bg-teal sm:py-2 sm:pl-2.5 sm:pr-4 sm:hover:bg-teal-hover sm:hover:text-white"
+            data-page-back
+            className="back-glyph back-glyph-on-photo pointer-events-auto"
           >
-            <ChevronDownIcon width={18} height={18} className="rotate-90" />
-            <span className="hidden sm:inline">Zurück</span>
+            <ChevronDownIcon width={24} height={24} className="rotate-90" />
           </button>
         }
       />
+      <ScrollBackButton onBack={goBack} />
 
       <main className="min-w-0 max-w-full">
         {/* Clean hero image — the spot identity (name/region/score) now lives in
@@ -387,7 +389,7 @@ export default function SpotDetail() {
                       {mapReady ? (
                         <LocatorMapBoundary coords={spot.coords}>
                           <Suspense fallback={<MapPlaceholder />}>
-                            <LocatorMap coords={spot.coords} origin={spot.origin} />
+                            <LocatorMap coords={spot.coords} origin={spot.origin} name={spot.name} timeZone={forecastSummary?.timezone} />
                           </Suspense>
                         </LocatorMapBoundary>
                       ) : (

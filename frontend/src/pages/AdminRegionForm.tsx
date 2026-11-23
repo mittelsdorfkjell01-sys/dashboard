@@ -45,6 +45,7 @@ import {
   parseDuplicateConflict,
   type DuplicateConflict,
 } from "../lib/duplicateConflicts";
+import { useAdminRealtimeRefresh } from "../context/AdminRealtimeContext";
 
 const label = "text-label font-medium text-admin-fg";
 
@@ -90,13 +91,15 @@ export default function AdminRegionForm() {
 
   const fieldsValue = stableFormValue({ name, country, description, descriptionEn });
   const imageValue = stableFormValue({ url: imgUrl, credit: imgCredit });
+  const fieldsDirty = fieldsBaseline !== null && fieldsValue !== fieldsBaseline;
+  const imageDirty = imageValue !== imageBaseline;
 
   useEffect(() => {
-    setDirty("fields", fieldsBaseline !== null && fieldsValue !== fieldsBaseline);
-  }, [fieldsBaseline, fieldsValue, setDirty]);
+    setDirty("fields", fieldsDirty);
+  }, [fieldsDirty, setDirty]);
   useEffect(() => {
-    setDirty("image", imageValue !== imageBaseline);
-  }, [imageBaseline, imageValue, setDirty]);
+    setDirty("image", imageDirty);
+  }, [imageDirty, setDirty]);
 
   const flash = (m: string) => {
     setNotice(m);
@@ -135,6 +138,22 @@ export default function AdminRegionForm() {
     loadSpots().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  useAdminRealtimeRefresh(async () => {
+    try {
+      const [nextRegions] = await Promise.all([
+        getAdminRegionsFlat(),
+        loadRegion(),
+        loadSpots(),
+      ]);
+      setRegions(nextRegions);
+      setGalleryVersion((version) => version + 1);
+      setError(null);
+    } catch (reason) {
+      setError(reason instanceof ApiError ? reason.message : "Live-Aktualisierung fehlgeschlagen.");
+    }
+  }, Boolean(id) && !fieldsDirty && !imageDirty && !busy && pickerOpen === null
+    && duplicateWarning === null && !deleteOpen && selIn.size === 0 && selOut.size === 0);
 
   const spots = useMemo(
     () => allSpots.filter((s) => s.region_id === id),

@@ -136,15 +136,17 @@ export default {
       },
       boxShadow: {
         // The only two shadows allowed on the PUBLIC site (admin has its own
-        // pair below). `float` originally stood in for the spot page header
+        // pair below). The values live in index.css as `--sw-shadow-card` /
+        // `--sw-shadow-float`, so hand-written CSS (map.css) can use the same
+        // two instead of inventing its own. `float` originally stood in for the spot page header
         // card's missing divider rule; every other public surface separates
         // with a hairline (`border-line`) instead. Two layers: a tighter,
         // darker near-shadow to ground the card + a soft wide one for
         // ambient depth.
-        float: "0 24px 32px -16px rgba(36, 28, 23, 0.24), 0 48px 80px -24px rgba(36, 28, 23, 0.30)",
+        float: "var(--sw-shadow-float)",
         // Soft, subtle elevation for a white surface that reads as raised
         // (the Info-tab comment box, the auth-choice dialog).
-        card: "0 12px 34px -18px rgba(36, 28, 23, 0.20)",
+        card: "var(--sw-shadow-card)",
         // Admin's own elevation pair (independent design system, dark-only —
         // see admin-theme.css `--a-shadow-*`). Popovers/dropdowns/tooltips
         // get `admin-pop`, real modal dialogs get `admin-dialog`; never the
@@ -170,10 +172,17 @@ export default {
         page: "1570px",
         content: "760px",
         measure: "62ch",
-        // A third wider than `measure`, for a page that carries its own
+        // Half again as wide as `measure`, for a page that carries its own
         // navigation column: the running text can take more width there
-        // because the nav, not the line length, is what frames it.
-        "measure-wide": "82ch",
+        // because the nav, not the line length, is what frames it. The page
+        // centres nav + gap + this measure as one unit (see pages/Fragen.tsx),
+        // so widening it widens the whole column pair, not just the text.
+        "measure-wide": "92ch",
+        // `measure-wide` plus the 13.5rem navigation column and the 3.5rem gap
+        // beside it. A page with its own nav centres *this* — the pair — so
+        // the text lands in the middle of the window instead of the middle of
+        // the space left over next to the nav.
+        "measure-nav": "calc(17rem + 92ch)",
         // The ONE admin content width. AdminShell's <main> owns it; admin pages
         // must not set their own max-width, or the body jumps between routes
         // (Hero used 1200px, Rider-Modell 6xl, Windfeld-Shadow 7xl).
@@ -209,6 +218,10 @@ export default {
       transitionTimingFunction: {
         DEFAULT: "var(--sw-ease)",
         brand: "var(--sw-ease)",
+        // The one exception to the house curve: a switch thumb overshoots
+        // slightly and settles, the way a physical toggle does (and the way
+        // iOS animates its own). Only ui/Switch uses it.
+        switch: "cubic-bezier(0.32, 1.6, 0.55, 1)",
       },
       transitionDuration: {
         DEFAULT: "var(--sw-dur-fast)",

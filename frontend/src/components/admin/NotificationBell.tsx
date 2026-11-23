@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   getNotifications,
@@ -11,6 +11,7 @@ import {
   adminSectionLabel,
   createAdminReturnState,
 } from "../../lib/adminNavigation";
+import { useAdminRealtimeRefresh } from "../../context/AdminRealtimeContext";
 
 const POLL_MS = 60_000; // minute polling for the badge
 
@@ -27,20 +28,27 @@ export default function NotificationBell() {
   const [items, setItems] = useState<AdminNotification[] | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
+  const refresh = useCallback(async () => {
+    try {
+      const result = await getUnreadNotificationCount();
+      setUnread(result.count);
+      if (open) {
+        const list = await getNotifications();
+        setItems(list.items);
+        setUnread(list.unread);
+      }
+    } catch {
+      // Best effort: keep the last known notification state.
+    }
+  }, [open]);
+
   // Badge: poll the count on a minute interval (and once on mount).
   useEffect(() => {
-    let alive = true;
-    const tick = () =>
-      getUnreadNotificationCount()
-        .then((r) => alive && setUnread(r.count))
-        .catch(() => {});
-    tick();
-    const t = setInterval(tick, POLL_MS);
-    return () => {
-      alive = false;
-      clearInterval(t);
-    };
-  }, []);
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), POLL_MS);
+    return () => window.clearInterval(timer);
+  }, [refresh]);
+  useAdminRealtimeRefresh(refresh);
 
   // Close on outside click.
   useEffect(() => {

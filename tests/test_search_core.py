@@ -8,6 +8,7 @@ import pytest
 from app.search.geocode import GeocodeResult, classify_geocode
 from app.search.pins import build_pins, cluster_pins, value_to_color
 from app.search.ranking import rank_nearby
+from app.search.service import _rank_rows
 from app.search.spatial import filter_spots_by_sport
 from app.search.text import match_entities, normalize
 from tests.search_helpers import FakeGeocoder, FakeScorer, make_region, make_spot
@@ -28,6 +29,12 @@ def test_search_profile_normalizes_only_supported_legacy_levels():
     with pytest.raises(HTTPException) as exc:
         _profile("professional")
     assert exc.value.status_code == 422
+
+
+def test_search_time_context_expands_week_ranges():
+    from app.api.search import _time_context
+
+    assert _time_context(12, "51-2")["weeks"] == [51, 52, 1, 2]
 
 def test_normalize_folds_accents_and_case():
     assert normalize("Kieler Bùcht") == "kieler bucht"
@@ -148,6 +155,30 @@ def test_rank_nearby_distance_damping_breaks_ties():
     )
     assert [r["spot"].slug for r in ranked] == ["b", "a"]  # nearer wins the tie
 
+
+def test_rank_rows_prefers_reliable_coverage_over_one_spiky_week():
+    reliable = make_spot("Reliable", 54.41, 10.22, ["kitesurf"], slug="reliable")
+    spiky = make_spot("Spiky", 54.42, 10.23, ["kitesurf"], slug="spiky")
+
+    class WeeklyScorer:
+        values = {
+            "reliable": {1: 0.6, 2: 0.6},
+            "spiky": {1: 1.0, 2: 0.3},
+        }
+
+        def score(self, spot, time_context=None, profile=None):
+            return self.values[spot.slug][time_context["week"]]
+
+    ranked = _rank_rows(
+        [(reliable, 0), (spiky, 0)],
+        "kitesurf",
+        {"weeks": [1, 2]},
+        None,
+        None,
+        WeeklyScorer(),
+    )
+
+    assert [row["slug"] for row in ranked] == ["reliable", "spiky"]
 
 def test_rank_nearby_averages_every_week_in_a_range():
     spot = make_spot("A", 54.41, 10.22, ["kitesurf"], slug="a")

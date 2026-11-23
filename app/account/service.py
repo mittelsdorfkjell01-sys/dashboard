@@ -7,6 +7,9 @@ transaction (mirrors :mod:`app.auth.service`). Validation errors raise
 
 from __future__ import annotations
 
+import hashlib
+import secrets
+import hmac
 import uuid
 from datetime import date, datetime, timezone
 
@@ -19,7 +22,7 @@ from app.account.security import (
 )
 from app.config import get_settings
 from app.password_policy import ensure_password_safe
-from app.models import AppUser, CommunityUpvote, Favorite, LocalTip, RecommendationLog, Region, Spot, SpotImage, SpotRating, SpotSubmission, SpotVisit, UserEvent
+from app.models import AppUser, AppUserIdentity, CommunityUpvote, Favorite, LocalTip, RecommendationLog, Region, Spot, SpotImage, SpotRating, SpotSubmission, SpotVisit, UserEvent
 from app.models.app_user import normalize_email
 
 
@@ -31,10 +34,16 @@ class AuthError(ValueError):
     """Bad credentials or wrong current password (→ 401/400 at the API)."""
 
 
+class PasswordRequiredError(AuthError):
+    """A registration link opened outside the browser that registered: the
+    mail recipient must choose the password here (→ 428 at the API)."""
+
+
 # Current version of the Nutzungsbedingungen (ToS). Bump when the terms change so
 # a new acceptance is recorded against the version actually shown. The server
 # stamps this at registration rather than trusting a client-sent version.
-TERMS_VERSION = "2026-10-05"
+# 2026-11-20: the minimum age is confirmed with the terms, no separate box.
+TERMS_VERSION = "2026-11-20"
 
 
 # --- accounts --------------------------------------------------------------
@@ -43,6 +52,70 @@ def get_by_email(db: Session, email: str) -> AppUser | None:
     return db.execute(
         select(AppUser).where(AppUser.email == normalize_email(email))
     ).scalar_one_or_none()
+
+
+def sign_in_with_identity(
+    db: Session,
+    *,
+    provider: str,
+    subject: str,
+    email: str | None,
+    email_verified: bool,
+    name: str | None,
+) -> AppUser:
+    """The account a verified Google/Apple identity belongs to — found, linked
+    or created (2026-11-21).
+
+    1. An identity seen before signs into its account.
+    2. Otherwise a provider-verified email that matches an account links to it
+       (user decision: automatic linking). If that account was never
+       confirmed, its password is discarded first: it was chosen by whoever
+       registered the address, which need not be its owner — the provider has
+       just proven ownership, the registrant had not.
+    3. Otherwise a new, already confirmed account is created. The sign-in page
+       states next to the buttons that continuing accepts the terms (which set
+       the minimum age), so that acceptance is recorded as for a registration.
+    """
+    identity = db.execute(
+        select(AppUserIdentity).where(AppUserIdentity.provider == provider, AppUserIdentity.subject == subject)
+    ).scalar_one_or_none()
+    if identity is not None:
+        user = db.get(AppUser, identity.user_id)
+        if user is None or not user.is_active:
+            raise AuthError("Dieses Konto ist nicht aktiv.")
+        return user
+
+    if not email or not email_verified:
+        raise AuthError("Der Anbieter hat keine bestätigte E-Mail-Adresse übermittelt.")
+    email = normalize_email(email)
+    now = datetime.now(timezone.utc)
+    user = get_by_email(db, email)
+    if user is not None:
+        if not user.is_active:
+            raise AuthError("Dieses Konto ist nicht aktiv.")
+        if user.email_verified_at is None:
+            user.password_hash = hash_password(secrets.token_urlsafe(32))
+            user.email_verified_at = now
+            user.email_token_version += 1  # every pending confirmation link dies
+            user.session_version += 1
+    else:
+        if db.scalar(select(AppUser.id).where(AppUser.pending_email == email)):
+            raise AuthError("Für diese E-Mail-Adresse läuft gerade ein Adresswechsel.")
+        user = AppUser(
+            email=email,
+            # Unusable until the person sets one via "Passwort vergessen".
+            password_hash=hash_password(secrets.token_urlsafe(32)),
+            display_name=(name or "").strip()[:120] or email.split("@")[0],
+            email_verified_at=now,
+            terms_accepted_version=TERMS_VERSION,
+            terms_accepted_at=now,
+            age_confirmed_at=now,
+        )
+        db.add(user)
+        db.flush()
+    db.add(AppUserIdentity(user_id=user.id, provider=provider, subject=subject, email=email))
+    db.flush()
+    return user
 
 
 def _validate_password(password: str) -> None:
@@ -63,13 +136,17 @@ def register(
     password: str,
     display_name: str | None,
     accepted_terms: bool,
-    age_confirmed: bool,
+    age_confirmed: bool = False,
 ) -> AppUser:
     # Consent is checked before anything else so a missing declaration always
-    # yields a 400, independent of email validity or duplicates.
-    if not accepted_terms or not age_confirmed:
+    # yields a 400, independent of email validity or duplicates. Since
+    # 2026-11-20 the minimum age (16) is part of the terms themselves
+    # (Nutzungsbedingungen § 3): accepting them confirms it, so there is no
+    # second box. `age_confirmed` is still accepted from older clients and
+    # recorded the same way.
+    if not accepted_terms:
         raise ValueError(
-            "Zustimmung zu den Nutzungsbedingungen und Bestätigung des Mindestalters sind erforderlich."
+            "Bitte akzeptiere die Nutzungsbedingungen und bestätige damit dein Mindestalter."
         )
     email = _validate_email(email)
     _validate_password(password)
@@ -98,6 +175,12 @@ def authenticate(db: Session, email: str, password: str) -> AppUser:
         password, user.password_hash
     ):
         raise AuthError("E-Mail oder Passwort ist falsch.")
+    # A password chosen at registration exists before the address is proven.
+    # Until the link is opened it must not sign anyone in — otherwise a third
+    # party could register someone else's address and use it. (Accounts from
+    # before verification existed were backfilled as verified, migration 0065.)
+    if user.email_verified_at is None:
+        raise AuthError("Bitte bestätige zuerst deine E-Mail-Adresse über den Link in der Mail.")
     if user.email_verified_at is None:
         raise AuthError("Bitte bestätige zuerst deine E-Mail-Adresse.")
     return user
@@ -136,11 +219,34 @@ def start_email_change(db: Session, user: AppUser, email: str, password: str) ->
     return create_account_action_token(user.id, purpose="change_email", version=user.email_token_version, email=email)
 
 
-def registration_token(user: AppUser) -> str:
-    return create_account_action_token(user.id, purpose="verify", version=user.email_token_version, email=user.email)
+def device_hash(nonce: str) -> str:
+    return hashlib.sha256(nonce.encode()).hexdigest()
 
 
-def confirm_email(db: Session, token: str, *, password: str | None = None) -> AppUser:
+def registration_token(user: AppUser, device_nonce: str | None = None) -> str:
+    return create_account_action_token(
+        user.id,
+        purpose="verify",
+        version=user.email_token_version,
+        email=user.email,
+        device=device_hash(device_nonce) if device_nonce else None,
+    )
+
+
+def restart_registration(db: Session, user: AppUser, password: str) -> None:
+    """Someone registers an address that is still unconfirmed: the latest
+    registration's password stands, and every earlier link stops working. Whoever
+    opens the new link in another browser still has to choose the password
+    there, so an earlier or later registrant cannot keep theirs."""
+    _validate_password(password)
+    user.password_hash = hash_password(password)
+    user.email_token_version += 1
+    db.flush()
+
+
+def confirm_email(
+    db: Session, token: str, *, password: str | None = None, device_nonce: str | None = None
+) -> AppUser:
     from datetime import datetime, timezone
     from jwt import PyJWTError
 
@@ -159,12 +265,24 @@ def confirm_email(db: Session, token: str, *, password: str | None = None) -> Ap
     if user is None or payload.get("ver") != user.email_token_version:
         raise AuthError("Bestätigungslink ist ungültig oder abgelaufen.")
     if purpose == "verify":
-        if user.email_verified_at is not None or payload.get("email") != user.email or not password:
+        if user.email_verified_at is not None or payload.get("email") != user.email:
             raise AuthError("Bestätigungslink ist ungültig oder abgelaufen.")
-        _validate_password(password)
-        # The mail recipient chooses the final password; a third party who
-        # pre-registered this address cannot later sign in with its own choice.
-        user.password_hash = hash_password(password)
+        same_browser = bool(
+            device_nonce
+            and payload.get("dev")
+            and hmac.compare_digest(device_hash(device_nonce), payload["dev"])
+        )
+        if password:
+            _validate_password(password)
+            # The mail recipient chooses the final password; a third party who
+            # pre-registered this address cannot later sign in with its own choice.
+            user.password_hash = hash_password(password)
+        elif not same_browser:
+            # The password from registration only stands when the link comes
+            # back to the browser that chose it. Anywhere else the person who
+            # actually holds the mailbox sets it — which is what keeps a
+            # registration with someone else's address from working.
+            raise PasswordRequiredError("Lege ein Passwort fest, um dein Konto zu bestätigen.")
         user.email_verified_at = datetime.now(timezone.utc)
         user.session_version += 1
     else:

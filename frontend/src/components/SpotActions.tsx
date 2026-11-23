@@ -37,7 +37,7 @@ export default function SpotActions({
           to={`/konto/reisen?spotId=${encodeURIComponent(spotId)}&spotName=${encodeURIComponent(spot.name)}`}
           aria-label={t("trips.planSpot")}
           title={t("trips.planSpot")}
-          className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band"
+          className="grid h-11 w-11 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band"
         >
           <CalendarIcon className="text-lead" />
         </Link>

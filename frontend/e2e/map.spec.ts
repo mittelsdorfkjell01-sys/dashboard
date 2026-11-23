@@ -237,7 +237,14 @@ function waveTile(z: number, x: number, y: number): Buffer {
   return gzipSync(Buffer.concat([prefix, header, body]));
 }
 
-test("map loads Leaflet layout and renders spots as accessible markers", async ({ page }) => {
+// 2026-11-23: /map renders the redesigned PublicMap (public-map/), covered by
+// public-map.spec.ts. The tests marked fixme below drive the retired MapView
+// (Leaflet markers, list tiles, old clock and chart panel) and cannot pass on
+// the new page. They stay listed, not deleted: several describe behaviour the
+// new map should keep (keyboard forecast, offline field, place search, stale
+// banners) and are to be ported to public-map.spec.ts.
+
+test.fixme("map loads Leaflet layout and renders spots as accessible markers", async ({ page }) => {
   const consoleErrors: string[] = [];
   page.on("console", (msg) => {
     if (msg.type() !== "error") return;
@@ -260,11 +267,12 @@ test("map loads Leaflet layout and renders spots as accessible markers", async (
   // panes and tiles fall into normal document flow on direct /map visits.
   await expect(map.locator(".leaflet-map-pane")).toHaveCSS("position", "absolute");
 
-  // The sources sit behind a small bare `i` that unfolds to its LEFT.
+  // The sources sit behind a small bare `i` that unfolds to its LEFT. The
+  // glyph stays 14px and chrome-less; only its tap target is the house 44px.
   const attribution = page.locator("main.swd-public-map").getByRole("button", { name: "Kartenquellen anzeigen" });
   await expect(attribution).toHaveAttribute("aria-expanded", "false");
   await expect(attribution).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  expect((await attribution.boundingBox())!.width).toBeLessThanOrEqual(28);
+  expect((await attribution.boundingBox())!.width).toBeGreaterThanOrEqual(44);
   await attribution.click();
   const sources = page.locator("main.swd-public-map").getByRole("complementary", { name: "Kartenquellen" });
   await expect(sources).toContainText("CARTO");
@@ -280,7 +288,7 @@ test("map loads Leaflet layout and renders spots as accessible markers", async (
   expect(consoleErrors).toEqual([]);
 });
 
-test("back and zoom controls stay above the tiles and use bare map glyphs", async ({ page }) => {
+test.fixme("back and zoom controls stay above the tiles and use bare map glyphs", async ({ page }) => {
   await mockBackend(page);
   await page.goto("/map");
   await expect(page.getByRole("button", { name: "Surfspot Spot A" })).toBeVisible();
@@ -306,7 +314,7 @@ test("back and zoom controls stay above the tiles and use bare map glyphs", asyn
   await expect(zoomOut).toBeVisible();
 });
 
-test("the initial overview requests only its final fitted tile zoom", async ({ page }) => {
+test.fixme("the initial overview requests only its final fitted tile zoom", async ({ page }) => {
   const tileZooms: number[] = [];
   await mockBackend(page, (url) => {
     // `@2x` since 2026-10-12: the grounds ask for CARTO's retina raster on a
@@ -325,7 +333,7 @@ test("the initial overview requests only its final fitted tile zoom", async ({ p
   expect(new Set(tileZooms).size).toBe(1);
 });
 
-test("the map keeps its own light palette and markers whatever the site theme is", async ({ page }) => {
+test.fixme("the map keeps its own light palette and markers whatever the site theme is", async ({ page }) => {
   // Light again since 2026-10-12 (the dark ground was tried for a day and read
   // as too dark): the map pins the light token set itself, so it does not
   // follow the site into dark mode.
@@ -352,7 +360,7 @@ test("the map keeps its own light palette and markers whatever the site theme is
   expect(tint).toBe("none");
 });
 
-test("the list trigger shows Landing-style tiles in a bottom row, not a text list or a dark overlay", async ({ page }) => {
+test.fixme("the list trigger shows Landing-style tiles in a bottom row, not a text list or a dark overlay", async ({ page }) => {
   await mockBackend(page);
   await page.goto("/map");
   await expect(page.getByRole("button", { name: "Surfspot Spot A" })).toBeVisible();
@@ -414,7 +422,7 @@ test("the list trigger shows Landing-style tiles in a bottom row, not a text lis
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
 });
 
-test("overlay marks read dark on the light ground, dots are one dark mark", async ({ page }) => {
+test.fixme("overlay marks read dark on the light ground, dots are one dark mark", async ({ page }) => {
   // The dots are not tinted by live wind — one dark disc (#1A1F24) with no
   // ring at all (2026-10-12: no white strokes anywhere on the map) — and the
   // overlay marks carry that same ink on both public maps.
@@ -439,7 +447,7 @@ test("overlay marks read dark on the light ground, dots are one dark mark", asyn
   expect(distinct).toEqual(["rgb(26, 31, 36)"]);
 });
 
-test("selecting a marker shows its chart panel with a plain-X close and a link to the full spot page", async ({ page }) => {
+test.fixme("selecting a marker shows its chart panel with a plain-X close and a link to the full spot page", async ({ page }) => {
   await mockBackend(page);
   await page.goto("/map?lat=54&lon=10&z=9");
   const marker = page.getByRole("button", { name: "Surfspot Spot A" });
@@ -461,7 +469,7 @@ test("selecting a marker shows its chart panel with a plain-X close and a link t
   await expect(spotLink).toBeHidden();
 });
 
-test("a deep-linked spot is selected on load and the shared position is not overwritten by fitBounds", async ({ page }) => {
+test.fixme("a deep-linked spot is selected on load and the shared position is not overwritten by fitBounds", async ({ page }) => {
   await mockBackend(page);
   await page.goto("/map?lat=54&lon=10&z=9&spot=00000000-0000-4000-8000-000000000001");
 
@@ -481,7 +489,7 @@ test("back navigation falls back to the homepage when there is no history entry"
   await expect(page).toHaveURL(/\/$/);
 });
 
-test("spot overview exposes the top-level mode switch without legacy layer chrome", async ({ page }) => {
+test.fixme("spot overview exposes the top-level mode switch without legacy layer chrome", async ({ page }) => {
   await mockBackend(page);
   await page.goto("/map?lat=0&lon=-150&z=10");
   await expect(page.locator(".leaflet-container")).toBeVisible();
@@ -493,7 +501,7 @@ test("spot overview exposes the top-level mode switch without legacy layer chrom
   await expect(page).not.toHaveURL(/mode=/);
 });
 
-test("the wind map carries the same overlay furniture as the spot map", async ({ page }, testInfo) => {
+test.fixme("the wind map carries the same overlay furniture as the spot map", async ({ page }, testInfo) => {
   const tileRequests: URL[] = [];
   await mockBackend(page, (url) => tileRequests.push(url), true);
   await page.goto("/map?mode=wind&lat=50&lon=8&z=4");
@@ -521,12 +529,22 @@ test("the wind map carries the same overlay furniture as the spot map", async ({
   // Same box as the spot map's bare glyphs.
   expect((await back.boundingBox())!.width).toBe(44);
 
-  // Nothing else: no control bar, no layer picker, no legend, no scrubber, no
-  // bottom search bar, and no second zoom control from MapLibre itself.
+  // Nothing else: no control bar, no layer picker, no scrubber, no bottom
+  // search bar, and no second zoom control from MapLibre itself. The colour
+  // scale came BACK on 2026-11-16 (`.swd-wx-legend` below): it is a legend,
+  // not a control surface — the field's colour is the map's main information
+  // and nothing on screen said what it meant.
   await expect(page.locator(".swd-wind-bar")).toHaveCount(0);
   await expect(page.locator(".swd-field-timeline")).toHaveCount(0);
   await expect(page.locator(".swd-field-legend")).toHaveCount(0);
   await expect(page.locator(".maplibregl-ctrl-group")).toHaveCount(0);
+
+  // The scale names the house wind bins in the visitor's unit, and the
+  // publication it belongs to — source and timestamp, never invented.
+  const legend = page.locator(".swd-wx-legend");
+  await expect(legend).toBeVisible();
+  await expect(legend).toContainText("Wind · kn");
+  await expect(legend).toContainText(/ICON|GFS|Lauf/);
   await expect(page.locator(".swd-wx-sheet")).toHaveCount(0);
   await expect(page.getByRole("combobox", { name: "Wetterebene" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Jetzt suchen" })).toHaveCount(0);
@@ -557,7 +575,7 @@ test("the wind map carries the same overlay furniture as the spot map", async ({
   });
 });
 
-test("the wind map's clock runs one day at a time, continuously, from now", async ({ page }) => {
+test.fixme("the wind map's clock runs one day at a time, continuously, from now", async ({ page }) => {
   // A publication on the hour, like the real models publish.
   const now = new Date().setMinutes(0, 0, 0);
   const hours = Array.from({ length: 8 * 6 }, (_, i) => new Date(now + i * 3 * 3_600_000).toISOString());
@@ -625,7 +643,7 @@ test("the wind map's clock runs one day at a time, continuously, from now", asyn
   await expect(label).toContainText(barHour);
 });
 
-test("the clock reaches five days even when the drawn model only publishes two", async ({ page }) => {
+test.fixme("the clock reaches five days even when the drawn model only publishes two", async ({ page }) => {
   // The live bug (2026-10-11): over Germany the map draws ICON-D2, whose run
   // ends after two days, so the day arrow went dead on day two. The days come
   // from what the MODELS can answer, and picking a later one asks the backend
@@ -660,7 +678,7 @@ test("the clock reaches five days even when the drawn model only publishes two",
   await expect.poll(() => asked.filter(Boolean).length).toBeGreaterThan(0);
 });
 
-test("the wind map's mode switch returns to the spot map, and back goes home", async ({ page }) => {
+test.fixme("the wind map's mode switch returns to the spot map, and back goes home", async ({ page }) => {
   await mockBackend(page, undefined, true);
   await page.goto("/map?mode=wind&lat=50&lon=8&z=4");
   await expect(page.locator(".swd-weather-map-base .maplibregl-canvas")).toBeVisible();
@@ -674,7 +692,7 @@ test("the wind map's mode switch returns to the spot map, and back goes home", a
   await expect(page).toHaveURL(/\/$|\/\?/);
 });
 
-test("Spots, Wind and Wellen switch without remounting the map stage", async ({ page }) => {
+test.fixme("Spots, Wind and Wellen switch without remounting the map stage", async ({ page }) => {
   await mockBackend(page, undefined, true, { withWaves: true });
   await page.goto("/map?mode=wind&lat=50&lon=8&z=4");
   const weatherCanvas = page.locator(".swd-weather-map-base .maplibregl-canvas");
@@ -710,7 +728,52 @@ test("Spots, Wind and Wellen switch without remounting the map stage", async ({ 
   expect(await page.evaluate(() => performance.getEntriesByType("navigation").length)).toBe(1);
 });
 
-test("a tap on open water opens the forecast sheet for that coordinate", async ({ page }, testInfo) => {
+test.fixme("the wind switches between particles and arrows, and a link keeps the choice", async ({ page }) => {
+  await mockBackend(page, undefined, true);
+  await page.goto("/map?mode=wind&lat=50&lon=8&z=4");
+  await expect(page.locator(".swd-field-webgl")).toBeVisible();
+
+  const display = page.getByRole("group", { name: "Darstellung des Winds" });
+  const particles = display.getByRole("button", { name: "Partikel" });
+  const arrows = display.getByRole("button", { name: "Pfeile" });
+  await expect(particles).toHaveAttribute("aria-pressed", "true");
+  await expect(arrows).toHaveAttribute("aria-pressed", "false");
+
+  // Directly under the mode words, centred with them, targets not overlapping.
+  const mode = (await page.getByRole("group", { name: "Kartenmodus" }).boundingBox())!;
+  const row = (await display.boundingBox())!;
+  expect(row.y).toBeGreaterThanOrEqual(mode.y + mode.height - 1);
+  expect(Math.abs(row.x + row.width / 2 - (mode.x + mode.width / 2))).toBeLessThan(2);
+  expect((await arrows.boundingBox())!.height).toBe(44);
+
+  await arrows.click();
+  await expect(arrows).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => new URL(page.url()).searchParams.get("display")).toBe("arrows");
+
+  await page.reload();
+  await expect(page.getByRole("group", { name: "Darstellung des Winds" }).getByRole("button", { name: "Pfeile" }))
+    .toHaveAttribute("aria-pressed", "true");
+});
+
+test.fixme("the waves draw drifting crests and carry no wind switch", async ({ page }) => {
+  await mockBackend(page, undefined, true, { withWaves: true });
+  await page.goto("/map?mode=waves&lat=54&lon=5&z=5");
+  await expect(page.locator(".swd-field-webgl")).toBeVisible();
+  await expect(page.getByRole("group", { name: "Darstellung des Winds" })).toHaveCount(0);
+
+  // The motion canvas is where the crests are drawn; it must carry ink.
+  const inked = () =>
+    page.locator(".swd-field-motion").evaluate((node) => {
+      const canvas = node as HTMLCanvasElement;
+      const data = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height).data;
+      let count = 0;
+      for (let index = 3; index < data.length; index += 4) if (data[index] > 40) count += 1;
+      return count;
+    });
+  await expect.poll(inked, { timeout: 10_000 }).toBeGreaterThan(200);
+});
+
+test.fixme("a tap on open water opens the forecast sheet for that coordinate", async ({ page }, testInfo) => {
   await mockBackend(page, undefined, true);
   await page.goto("/map?mode=wind&lat=50&lon=8&z=4");
   const canvas = page.locator(".swd-weather-map-base .maplibregl-canvas");
@@ -737,10 +800,17 @@ test("a tap on open water opens the forecast sheet for that coordinate", async (
   const gustHeights = await sheet.locator('[data-wind-bar="gust"]').evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().height));
   expect(Math.max(...gustHeights)).toBeCloseTo(testInfo.project.name === "chromium-mobile" ? 79 : 87, 0);
 
-  // One bottom dock: forecast above, global time regulator immediately below.
+  // One bottom dock, and since 2026-11-16 a real one: scale and sources, the
+  // clock, then the forecast sheet on the bottom edge — a flex column, so the
+  // clock rides on the sheet's top edge instead of each piece being lifted
+  // past the others by a hand-measured offset (the sheet used to sit 70px up
+  // and the clock 46px up, and a phone stacked the two plus the sources glyph
+  // into the bottom third).
   const clock = page.locator(".swd-wx-time");
   const [sheetBox, clockBox] = [await sheet.boundingBox(), await clock.boundingBox()];
-  expect(sheetBox!.y + sheetBox!.height).toBeLessThanOrEqual(clockBox!.y + 2);
+  expect(clockBox!.y + clockBox!.height).toBeLessThanOrEqual(sheetBox!.y + 2);
+  // Docked to it, not floating somewhere above it.
+  expect(sheetBox!.y - (clockBox!.y + clockBox!.height)).toBeLessThan(24);
 
   await page.screenshot({
     path: `../.impeccable/review/${testInfo.project.name === "chromium-mobile" ? "mobile-sheet" : "desktop-sheet"}.png`,
@@ -762,7 +832,7 @@ test("a tap on open water opens the forecast sheet for that coordinate", async (
   await expect(page.locator(".swd-wx-sheet")).toHaveCount(0);
 });
 
-test("a tap near a spot dot opens that spot's own forecast, linked to its page", async ({ page }) => {
+test.fixme("a tap near a spot dot opens that spot's own forecast, linked to its page", async ({ page }) => {
   await mockBackend(page, undefined, true);
   await page.goto("/map?mode=wind&lat=54&lon=10&z=12");
   const canvas = page.locator(".swd-weather-map-base .maplibregl-canvas");
@@ -788,7 +858,7 @@ test("a tap near a spot dot opens that spot's own forecast, linked to its page",
   await expect(sheet.locator('[data-wind-bar="wind"]').first()).toBeVisible();
 });
 
-test("a spot without hourly forecast says so instead of showing empty bars", async ({ page }) => {
+test.fixme("a spot without hourly forecast says so instead of showing empty bars", async ({ page }) => {
   await mockBackend(page, undefined, true, { emptyForecast: true });
   await page.goto("/map?mode=wind&lat=54&lon=10&z=12");
   const canvas = page.locator(".swd-weather-map-base .maplibregl-canvas");
@@ -811,7 +881,7 @@ test("a spot without hourly forecast says so instead of showing empty bars", asy
   await expect(sheet.locator('[data-wind-bar="wind"]')).toHaveCount(0);
 });
 
-test("keyboard users open the forecast for the point at the map centre", async ({ page }) => {
+test.fixme("keyboard users open the forecast for the point at the map centre", async ({ page }) => {
   await mockBackend(page, undefined, true);
   await page.goto("/map?mode=wind&lat=50&lon=8&z=4");
   const canvas = page.locator(".swd-weather-map-base .maplibregl-canvas");
@@ -820,7 +890,7 @@ test("keyboard users open the forecast for the point at the map centre", async (
   await expect(page.locator(".swd-wx-sheet").locator('[data-wind-bar="wind"]').first()).toBeVisible();
 });
 
-test("the map's search is place-only, zooms instead of leaving, and opens the spot's forecast", async ({ page }) => {
+test.fixme("the map's search is place-only, zooms instead of leaving, and opens the spot's forecast", async ({ page }) => {
   await mockBackend(page, undefined, true);
   await page.goto("/map?mode=wind&lat=50&lon=8&z=4");
   await expect(page.locator(".swd-weather-map-base .maplibregl-canvas")).toBeVisible();
@@ -838,7 +908,7 @@ test("the map's search is place-only, zooms instead of leaving, and opens the sp
   await expect(searchSheet.getByText("Welche Sportart?", { exact: true })).toHaveCount(0);
 
   await searchSheet.getByText("Wohin?", { exact: true }).click();
-  await searchSheet.getByRole("textbox", { name: "Region oder Spot suchen" }).fill("Spot A");
+  await searchSheet.getByRole("searchbox", { name: "Region oder Spot suchen" }).fill("Spot A");
   await searchSheet.getByText("Spot A", { exact: true }).first().click();
   await page.getByRole("button", { name: "Suchen" }).click();
 
@@ -849,7 +919,7 @@ test("the map's search is place-only, zooms instead of leaving, and opens the sp
   await expect(page.locator(".swd-wx-sheet").getByRole("link", { name: "Spot A" })).toBeVisible();
 });
 
-test("a wave-map link opens the wave field and keeps its shared camera", async ({ page }) => {
+test.fixme("a wave-map link opens the wave field and keeps its shared camera", async ({ page }) => {
   await mockBackend(page, undefined, true, { withWaves: true });
   await page.goto("/map?mode=waves&lat=54&lon=5&z=4");
 
@@ -860,7 +930,7 @@ test("a wave-map link opens the wave field and keeps its shared camera", async (
   await expect.poll(() => Number(new URL(page.url()).searchParams.get("lon"))).toBeCloseTo(5, 1);
 });
 
-test("the pre-framed wind entry opens the same bare map", async ({ page }) => {
+test.fixme("the pre-framed wind entry opens the same bare map", async ({ page }) => {
   // What the spot Daten page and the results page both open. `toggle=0` is a
   // leftover of the removed switch and must simply be harmless.
   await mockBackend(page, undefined, true);
@@ -874,7 +944,7 @@ test("the pre-framed wind entry opens the same bare map", async ({ page }) => {
   await expect(page.getByRole("group", { name: "Kartenmodus" })).toBeVisible();
 });
 
-test("wind mode keeps a close spot zoom, and stops where the field goes flat", async ({ page }) => {
+test.fixme("wind mode keeps a close spot zoom, and stops where the field goes flat", async ({ page }) => {
   await mockBackend(page, undefined, true);
   await page.goto("/map?mode=wind&lat=54&lon=10&z=12");
   await expect(page.locator(".swd-weather-map-base .maplibregl-canvas")).toBeVisible();
@@ -891,7 +961,7 @@ test("wind mode keeps a close spot zoom, and stops where the field goes flat", a
 });
 
 for (const freshness of ["delayed", "stale", "expired"] as const) {
-  test(`${freshness} field publications do not add a stale-run banner`, async ({ page }) => {
+  test.fixme(`${freshness} field publications do not add a stale-run banner`, async ({ page }) => {
     await mockBackend(page, undefined, true, { freshness });
     await page.goto("/map?mode=wind&lat=50&lon=8&z=4");
     await expect(page.locator(".swd-weather-map-base .maplibregl-canvas")).toBeVisible();
@@ -899,7 +969,7 @@ for (const freshness of ["delayed", "stale", "expired"] as const) {
   });
 }
 
-test("an offline transition keeps the already loaded wind field visible", async ({ page, context }) => {
+test.fixme("an offline transition keeps the already loaded wind field visible", async ({ page, context }) => {
   await mockBackend(page, undefined, true);
   await page.goto("/map?mode=wind&lat=50&lon=8&z=4");
   await expect(page.locator(".swd-field-webgl")).toBeVisible();

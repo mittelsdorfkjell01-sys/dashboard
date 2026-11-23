@@ -112,11 +112,14 @@ export default function SpotCard({
       <div className={`flex flex-1 flex-col ${compact ? "gap-0 pt-1.5" : "gap-0 pt-1.5 sm:pt-2"}`}>
         <div className="flex items-baseline justify-between gap-3">
           {/* Name and origin mark share one baseline row: the mark trails the
-              name, inside the truncation flex so a long name still clips. */}
+              name, inside the clamping flex so a long name still clips. Two
+              lines, not one: in the two-up phone grid a single line cut most
+              names to a stub ("Capo M…", "Fehmar…"), and the name is the one
+              thing on the tile a visitor must be able to read. */}
           <p
             className={`flex min-w-0 items-baseline gap-1.5 font-semibold text-ink ${compact ? "text-ui" : "text-body"}`}
           >
-            <span className="min-w-0 truncate">{spot.name}</span>
+            <span className="line-clamp-2 min-w-0 break-words">{spot.name}</span>
             <SpotOriginMark origin={spot.origin} />
           </p>
           {!mapRail && windValue != null && (

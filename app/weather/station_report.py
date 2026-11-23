@@ -18,6 +18,34 @@ from app.weather.station_identity import (
 )
 
 
+def _identity_review_evidence(stations) -> tuple[Counter, dict[int, list[dict]]]:
+    hints = Counter()
+    evidence: dict[int, list[dict]] = {index: [] for index in range(len(stations))}
+    for left, right, reasons in possible_duplicate_candidates(stations):
+        hints[left] += 1
+        hints[right] += 1
+        for index, counterpart in ((left, right), (right, left)):
+            other = stations[counterpart]
+            evidence[index].append({
+                "station_id": str(other.id),
+                "identity": f"{other.provider}:{other.provider_station_id}",
+                "cross_provider": stations[index].provider != other.provider,
+                "reasons": list(reasons),
+            })
+    return hints, evidence
+
+
+def _operational_elapsed_days(dossier) -> float:
+    statistics = (dossier.payload.get("statistics") or {}) if dossier else {}
+    operational = statistics.get("operational") or {}
+    try:
+        first = datetime.fromisoformat(str(operational.get("first_observed_at")))
+        last = datetime.fromisoformat(str(operational.get("last_observed_at")))
+    except (TypeError, ValueError):
+        return 0.0
+    return max(0.0, round((last - first).total_seconds() / 86400, 2))
+
+
 def station_report(db, *, now: datetime | None = None) -> dict:
     now = now or datetime.now(timezone.utc)
     stations = db.scalars(select(WeatherStation).order_by(WeatherStation.provider, WeatherStation.provider_station_id)).all()
@@ -62,20 +90,7 @@ def station_report(db, *, now: datetime | None = None) -> dict:
     group_history_by_epoch: dict = {}
     for decision in group_decisions:
         group_history_by_epoch.setdefault(decision.epoch_id, []).append(decision)
-    candidate_pairs = possible_duplicate_candidates(stations)
-    identity_hints = Counter()
-    identity_evidence: dict[int, list[dict]] = {index: [] for index in range(len(stations))}
-    for left, right, _reasons in candidate_pairs:
-        identity_hints[left] += 1
-        identity_hints[right] += 1
-        for index, counterpart in ((left, right), (right, left)):
-            other = stations[counterpart]
-            identity_evidence[index].append({
-                "station_id": str(other.id),
-                "identity": f"{other.provider}:{other.provider_station_id}",
-                "cross_provider": stations[index].provider != other.provider,
-                "reasons": list(_reasons),
-            })
+    identity_hints, identity_evidence = _identity_review_evidence(stations)
     review_queue = []
     for index, station in enumerate(stations):
         dossier = current_dossier_by_epoch.get(station.current_epoch_id)
@@ -90,16 +105,7 @@ def station_report(db, *, now: datetime | None = None) -> dict:
                     if dossier else ["current_dossier_missing"])
         statistics = (dossier.payload.get("statistics") or {}) if dossier else {}
         operational = statistics.get("operational") or {}
-        first_observed = operational.get("first_observed_at")
-        last_observed = operational.get("last_observed_at")
-        try:
-            first_value = datetime.fromisoformat(str(first_observed))
-            last_value = datetime.fromisoformat(str(last_observed))
-            elapsed_days = max(
-                0.0, round((last_value - first_value).total_seconds() / 86400, 2)
-            )
-        except (TypeError, ValueError):
-            elapsed_days = 0.0
+        elapsed_days = _operational_elapsed_days(dossier)
         current_group_history = sorted(
             group_history_by_epoch.get(station.current_epoch_id, []),
             key=lambda row: (row.decided_at, str(row.id)),

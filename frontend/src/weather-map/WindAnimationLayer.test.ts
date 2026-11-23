@@ -9,6 +9,10 @@ import {
   advectionPxPerSecond,
   alignedGridStart,
   arrowSpacingPx,
+  crestAlpha,
+  crestArc,
+  crestDriftPxPerSecond,
+  crestHalfLengthPx,
   fadeParticleTrails,
   mercatorStretch,
   metresPerPixel,
@@ -142,5 +146,51 @@ describe("density follows the published cell", () => {
     expect(arrowSpacingPx(36)).toBe(62);
     expect(arrowSpacingPx(220)).toBeCloseTo(100, 6);
     expect(arrowSpacingPx(1200)).toBe(190);
+  });
+});
+
+describe("wave crests", () => {
+  // Waves travelling east (+u): on screen +x.
+  const east = crestArc(100, 100, 2, 0);
+
+  it("lies across the direction of travel, symmetric about its centre", () => {
+    expect(east.start[0]).toBeCloseTo(100);
+    expect(east.end[0]).toBeCloseTo(100);
+    expect(east.start[1] + east.end[1]).toBeCloseTo(200);
+    expect(Math.abs(east.start[1] - east.end[1])).toBeCloseTo(2 * crestHalfLengthPx(2));
+  });
+
+  it("bulges forward, downwave, never back", () => {
+    expect(east.control[0]).toBeGreaterThan(100);
+    expect(east.control[1]).toBeCloseTo(100);
+    // Waves travelling north (+v) bulge up the screen (smaller y).
+    const north = crestArc(100, 100, 0, 1.5);
+    expect(north.control[1]).toBeLessThan(100);
+    expect(north.control[0]).toBeCloseTo(100);
+  });
+
+  it("is a single smooth curve: the control point stays off the chord", () => {
+    const diagonal = crestArc(0, 0, 1, 1);
+    const chordMid = [(diagonal.start[0] + diagonal.end[0]) / 2, (diagonal.start[1] + diagonal.end[1]) / 2];
+    expect(Math.hypot(diagonal.control[0] - chordMid[0], diagonal.control[1] - chordMid[1])).toBeGreaterThan(1);
+  });
+
+  it("grows a little with the sea, within bounds", () => {
+    expect(crestHalfLengthPx(0)).toBe(7);
+    expect(crestHalfLengthPx(1)).toBeGreaterThan(crestHalfLengthPx(0.2));
+    expect(crestHalfLengthPx(12)).toBe(20);
+    expect(crestHalfLengthPx(Number.NaN)).toBe(7);
+  });
+
+  it("drifts calmly", () => {
+    expect(crestDriftPxPerSecond(0)).toBe(6);
+    expect(crestDriftPxPerSecond(10)).toBe(12);
+  });
+
+  it("fades in and out instead of blinking", () => {
+    expect(crestAlpha(0, 5)).toBe(0);
+    expect(crestAlpha(5, 5)).toBe(0);
+    expect(crestAlpha(2.5, 5)).toBeCloseTo(0.85);
+    expect(crestAlpha(0.5, 5)).toBeLessThan(crestAlpha(2, 5));
   });
 });

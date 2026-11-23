@@ -145,9 +145,17 @@ def rank_by_timewindow(
     """
     weeks = window_weeks(window)
     ranked: list[dict] = []
+    params_by_sport: dict[str, dict] = {}
     for spot in candidates:
         sp = sport or primary_sport(spot)
-        p = params or (get_params(sp, db) if sp else None)
+        if params is not None:
+            p = params
+        elif sp is not None:
+            if sp not in params_by_sport:
+                params_by_sport[sp] = get_params(sp, db)
+            p = params_by_sport[sp]
+        else:
+            p = None
         thr = p["week_good_threshold"] if p else WEEK_GOOD_THRESHOLD
         scores = spot_week_scores(spot, sp, profile, p, db)
         cov, inten = coverage_intensity(scores, weeks, thr)
@@ -177,9 +185,17 @@ def best_weeks_for_area(
     """
     curves = []
     thresholds = []
+    params_by_sport: dict[str, dict] = {}
     for s in spots:
         sp = sport or primary_sport(s)
-        p = params or (get_params(sp, db) if sp else None)
+        if params is not None:
+            p = params
+        elif sp is not None:
+            if sp not in params_by_sport:
+                params_by_sport[sp] = get_params(sp, db)
+            p = params_by_sport[sp]
+        else:
+            p = None
         curves.append(spot_week_scores(s, sp, profile, p, db))
         thresholds.append(p["week_good_threshold"] if p else WEEK_GOOD_THRESHOLD)
 

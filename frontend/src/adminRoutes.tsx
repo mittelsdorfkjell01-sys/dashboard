@@ -11,6 +11,7 @@ import AdminShell from "./components/AdminShell";
 import RequireAuth from "./components/RequireAuth";
 import { AuthProvider } from "./lib/auth";
 import { AdminThemeProvider } from "./components/admin/theme";
+import { AdminRealtimeProvider } from "./context/AdminRealtimeContext";
 
 const AdminLogin = React.lazy(() => import("./pages/AdminLogin"));
 const AdminHome = React.lazy(() => import("./pages/AdminHome"));
@@ -50,7 +51,9 @@ const adminRoutes: RouteObject[] = [
         path: "/admin",
         element: (
           <RequireAuth>
-            <AdminShell />
+            <AdminRealtimeProvider>
+              <AdminShell />
+            </AdminRealtimeProvider>
           </RequireAuth>
         ),
         children: [

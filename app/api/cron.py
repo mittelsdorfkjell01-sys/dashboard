@@ -87,7 +87,10 @@ def enqueue_live_wind(db: Session = Depends(get_db)) -> dict:
     except Exception:
         db.rollback()
         logger.exception("cron_live_wind_enqueue_failed")
-        return {"error": "internal_error", "public_effect": "none"}
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="live_wind_enqueue_failed",
+        )
 
 
 @router.post(

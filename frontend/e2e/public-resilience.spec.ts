@@ -29,7 +29,6 @@ test("landing, discovery and map expose recoverable data outages", async ({ page
 
   await page.goto("/search");
   await expect(page.getByRole("heading", { name: "Entdecken" })).toBeVisible();
-  await expect(page.getByText(/Aktive Suche: überall · alle Sportarten · jederzeit/)).toBeVisible();
   await expect(page.getByText("Die Suche ist gerade nicht verfügbar.")).toBeVisible();
 
   await page.goto("/map");

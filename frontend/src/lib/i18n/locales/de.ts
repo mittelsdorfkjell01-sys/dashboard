@@ -58,7 +58,7 @@ export const de = {
     spots: "Die Spots", noSpots: "Keine Spots für diese Auswahl.", map: "Auf der Karte", similar: "Ähnliche Regionen",
   },
   dataHelp: { label: "Erklärung öffnen", suffix: "Mehr unter Daten & Fragen" },
-  recommendations: { limits: "Katalogauswahl zur Orientierung. Vorhersagen sind Modellwerte, keine Garantie; Quelle und Aktualität stehen an den Wetterdaten.", currentTitle: "Spot-Auswahl", nextWeekTitle: "Für nächste Woche vormerken", seasonTitle: "Saisonale Spot-Auswahl", allSpots: "Alle Spots entdecken", map: "Karte" },
+  recommendations: { currentTitle: "Spot-Auswahl", nextWeekTitle: "Für nächste Woche vormerken", seasonTitle: "Saisonale Spot-Auswahl", allSpots: "Alle Spots entdecken", map: "Karte" },
   // --- Daten & Fragen -------------------------------------------------------
   // One public page carries help, project background and contact (see
   // pages/Fragen.tsx); it replaced the former FAQ/Kontakt/UeberUns pages, where
@@ -66,6 +66,7 @@ export const de = {
   // German is the source language — en.ts must stay structurally identical.
   help: {
     title: "Daten & Fragen",
+    back: "Zurück",
     lede: "Woher die Daten kommen, wo ihre Grenzen liegen, wie Konto und Mitmachen funktionieren – und wie du den Betreiber erreichst.",
     jump: {
       label: "Auf dieser Seite",
@@ -77,7 +78,12 @@ export const de = {
       map: "Karte",
       account: "Konto",
       contribute: "Mitmachen",
-      contact: "Kontakt",
+      // Chrome of the mobile jump menu (the bottom pill that replaced the
+      // horizontally scrolling strip). The section entries above are shared;
+      // the menu shows them by their `section.*` heading, not these keywords.
+      menu: "Abschnitte",
+      menuOpen: "Abschnittsmenü öffnen",
+      close: "Schließen",
     },
     section: {
       safety: "Sicherheit",
@@ -387,15 +393,30 @@ export const de = {
     close: "Menü schließen",
     areas: "Konto-Bereiche",
     myProfile: "Mein Profil",
-    welcome: "Willkommen",
-    welcomeBody: "Melde dich an, um Favoriten und eigene Spots zu verwalten.",
     signIn: "Anmelden",
-    createAccount: "Konto erstellen",
     planned: "Geplant",
     signOut: "Abmelden",
-    // The mobile sheet sets its rows in lower case; keeping it a separate key
-    // means a future locale can diverge without one of the two going wrong.
-    signOutSheet: "abmelden",
+    explore: "Entdecken",
+    suggestSpot: "Spot vorschlagen",
+    search: {
+      label: "Im Menü suchen",
+      clear: "Suche leeren",
+      results: "Treffer",
+      empty: "Nichts gefunden zu „{{query}}“.",
+      feature: "Funktion",
+      page: "Seite",
+      map: "Windkarte",
+      keywords: {
+        profile: "Konto Name Avatar",
+        setup: "Ausrüstung Gear Quiver Board Kite Segel Wing Foil",
+        saved: "Favoriten gespeichert Merkliste",
+        trips: "Reise Trip planen Urlaub",
+        addSpots: "Spot vorschlagen neu eintragen Community",
+        settings: "Einheiten Knoten Beaufort Meter Fuß Temperatur Passwort E-Mail Konto löschen Export",
+        map: "Karte Wind Strömung Partikel",
+        contact: "E-Mail schreiben Fehler melden",
+      },
+    },
   },
   settings: {
     pageTitle: "Einstellungen",

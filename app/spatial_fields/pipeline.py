@@ -373,14 +373,8 @@ def _manifest(
     )
 
 
-def process_run(
-    db,
-    run_id: uuid.UUID,
-    *,
-    provider: WeatherFieldProvider,
-    storage: FieldObjectStorage,
-    settings,
-) -> dict:
+def _processing_context(db, run_id: uuid.UUID, provider, settings) -> tuple:
+    """Resolve and validate immutable run inputs before provider I/O starts."""
     run = db.get(WeatherFieldRun, run_id)
     if run is None:
         raise LookupError("weather-field run not found")
@@ -392,14 +386,15 @@ def process_run(
     if run.status != "discovered":
         raise ValueError("only discovered weather-field runs can be processed")
 
+    is_wave = (model.model_metadata or {}).get("product") == "wave"
     base_scope = (
         getattr(settings, "wave_field_scope_key", "europe-waves")
-        if (model.model_metadata or {}).get("product") == "wave"
+        if is_wave
         else settings.weather_field_scope_key
     )
     primary_model = (
         getattr(settings, "wave_field_primary_model", "dwd-ewam")
-        if (model.model_metadata or {}).get("product") == "wave"
+        if is_wave
         else getattr(settings, "weather_field_primary_model", "icon-eu")
     )
     root_key = (
@@ -417,6 +412,26 @@ def process_run(
         for value in run.valid_times
     ]
     source_lods, _manifest_lods, _display_resolution = _lod_profile(model.model_key)
+    return run, model, base_scope, primary_model, root_key, expected_hours, source_lods
+
+
+def process_run(
+    db,
+    run_id: uuid.UUID,
+    *,
+    provider: WeatherFieldProvider,
+    storage: FieldObjectStorage,
+    settings,
+) -> dict:
+    (
+        run,
+        model,
+        base_scope,
+        primary_model,
+        root_key,
+        expected_hours,
+        source_lods,
+    ) = _processing_context(db, run_id, provider, settings)
     transition_run(db, run.id, "downloading")
     db.commit()
     transition_run(db, run.id, "processing")

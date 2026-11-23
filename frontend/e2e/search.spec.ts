@@ -81,7 +81,8 @@ test("search forwards a selected month", async ({ page }) => {
 
   await page.goto("/search?q=Laboe&month=7");
   await expect(page.getByRole("link", { name: /Laboe/ })).toBeVisible();
-  await expect(page.getByRole("status")).toContainText("Juli");
+  // The redesigned results page names the search in its header bar, not in a
+  // separate "Aktive Suche" status line; what matters here is the request.
   expect(requestedMonth).toBe("7");
 });
 

@@ -7,6 +7,11 @@ import { hostedSrcSet, hotlinkSrcSet, objectPosition } from "../lib/heroSource";
  *  and the spot page collapses its columns. Kept in one place so the CSS
  *  breakpoint and the JS media query can't drift. */
 const MOBILE_QUERY = "(max-width: 639.98px)";
+// A 390px phone at DPR 2 needs 780 source pixels. Without a tiny tolerance the
+// browser skips an available 768px derivative and downloads the next 1280px
+// image (often 2.5–3x the bytes) for a difference that is not perceptible in a
+// full-bleed photograph. Desktop keeps the exact full-viewport hint.
+const HERO_SIZES = "(max-width: 639px) 98vw, 100vw";
 
 function useMobileViewport(): boolean {
   const [isMobile, setIsMobile] = useState(() =>
@@ -131,7 +136,7 @@ export default function HeroImage({
       <img
         src={displayedSrc}
         srcSet={dynamicSrcSet}
-        sizes="100vw"
+        sizes={HERO_SIZES}
         alt={alt}
         loading={priority ? "eager" : "lazy"}
         {...fetchPriorityAttribute(priority)}
@@ -154,7 +159,7 @@ export default function HeroImage({
         <source
           key={fmt}
           type={MIME[fmt]}
-          sizes="100vw"
+          sizes={HERO_SIZES}
           srcSet={entry.widths.map((w) => `/${key}-${w}.${fmt} ${w}w`).join(", ")}
         />
       ))}

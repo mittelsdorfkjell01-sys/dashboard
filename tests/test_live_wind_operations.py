@@ -5,6 +5,8 @@ from pathlib import Path
 from types import SimpleNamespace
 import uuid
 
+import pytest
+
 from app.config import Settings
 from app.weather.live_wind_jobs import (
     _exclusion_counts,
@@ -430,5 +432,32 @@ def test_shadow_workflow_is_manual_and_runs_import_worker_and_doctor():
     assert "$WEATHER_OBSERVATION_ENDPOINT" in workflow
     assert "$LIVE_WIND_ENDPOINT" in workflow
     assert "--retry 3" in workflow
+    assert "json.load(sys.stdin)" in workflow
+    assert 'body.get("error")' in workflow
     assert "python -m scripts.live_wind_worker" in workflow
     assert "python -m scripts.live_wind_doctor --no-rasters --fail-on-alert" in workflow
+
+
+def test_live_wind_enqueue_failure_is_an_http_error(monkeypatch):
+    from fastapi import HTTPException
+
+    from app.api.cron import enqueue_live_wind
+    from app.weather import live_wind_jobs
+
+    class Db:
+        rolled_back = False
+
+        def rollback(self):
+            self.rolled_back = True
+
+    db = Db()
+    monkeypatch.setattr(
+        live_wind_jobs,
+        "enqueue_live_wind_cycle",
+        lambda _db: (_ for _ in ()).throw(RuntimeError("queue unavailable")),
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        enqueue_live_wind(db)
+    assert exc.value.status_code == 503
+    assert db.rolled_back is True

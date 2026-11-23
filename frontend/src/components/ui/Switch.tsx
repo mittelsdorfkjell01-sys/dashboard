@@ -6,6 +6,14 @@ import type { ReactNode } from "react";
  * Off: band track with a hairline. On: the brand blue with the thumb slid
  * across. 56×28 track, 24px thumb — 44px rows carry the touch target, so the
  * track itself can sit lower than the row without shrinking what you can hit.
+ *
+ * Motion, after the physical switch iOS models: the thumb travels on a curve
+ * that overshoots a little and settles (`ease-switch`), while the track colour
+ * crossfades on the shorter house duration — the colour has arrived before the
+ * thumb does, so the state reads early and the movement finishes the sentence.
+ * Held down, the thumb stretches toward the side it would travel to; it is the
+ * one piece of this system that reacts to the press itself. That stretch needs
+ * `group` on the button around it (all three callers set it).
  */
 export function SwitchTrack({ checked, icon }: { checked: boolean; icon?: ReactNode }) {
   return (
@@ -16,8 +24,8 @@ export function SwitchTrack({ checked, icon }: { checked: boolean; icon?: ReactN
       }`}
     >
       <span
-        className={`grid h-6 w-6 place-items-center rounded-full bg-surface text-ink ring-1 ring-black/5 transition-transform duration-base motion-reduce:transition-none ${
-          checked ? "translate-x-6" : "translate-x-0"
+        className={`grid h-6 w-6 place-items-center rounded-full bg-surface text-ink ring-1 ring-black/5 transition-[transform,width] duration-slow ease-switch group-active:w-7 motion-reduce:transition-none ${
+          checked ? "translate-x-6 group-active:translate-x-5" : "translate-x-0"
         }`}
       >
         {icon}
@@ -53,7 +61,7 @@ export default function Switch({
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`flex min-h-11 w-full items-center justify-between gap-4 text-left text-ui text-ink disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`group flex min-h-11 w-full items-center justify-between gap-4 text-left text-ui text-ink disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
     >
       <span className="min-w-0">
         {children}

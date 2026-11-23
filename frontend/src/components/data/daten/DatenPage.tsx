@@ -1,10 +1,9 @@
 import { lazy, Suspense, useEffect } from "react";
-import { Link } from "react-router-dom";
 import type { LiveConditionsRead } from "../../../lib/api";
 import type { Spot } from "../../../lib/types";
 import type { NormalizedForecastSeries } from "../../../lib/forecastNormalization";
 import { formatMonthDayRange } from "../../../lib/bestSeason";
-import { MapIcon } from "../../../lib/icons";
+import MapPill from "../../MapPill";
 import { SpotDataScopeProvider } from "../../../state/SpotDataScope";
 import { EmptyState } from "../../AsyncStates";
 import "./daten-theme.css";
@@ -148,13 +147,11 @@ export default function DatenPage({
             the shared weather map zoomed to this spot, locked to the wind
             field: on a spot surface there is nothing to toggle to. */}
         {spot.coords && (
-          <Link
+          <MapPill
             to={windMapHref([spot.coords[1], spot.coords[0]], SPOT_FOCUS_ZOOM, { toggle: false })}
-            aria-label="Karte öffnen"
-            className="fixed bottom-6 left-1/2 z-sticky flex -translate-x-1/2 items-center gap-1.5 rounded-card bg-page px-4 py-2 text-ui font-normal text-white shadow-float"
-          >
-            Karte <MapIcon className="text-body" />
-          </Link>
+            ground="band"
+            className="text-white"
+          />
         )}
       </div>
     </SpotDataScopeProvider>

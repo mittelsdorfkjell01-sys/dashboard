@@ -42,7 +42,21 @@ export default defineConfig(({ command, mode }) => {
           ];
         },
       },
+      {
+        name: "public-landing-boot-only",
+        transformIndexHtml(html, context) {
+          if (!adminBuild || !context.filename.endsWith("landing.html")) return html;
+          return html
+            .replace(
+              /\s*<!-- public-landing-boot:start -->[\s\S]*?<!-- public-landing-boot:end -->/g,
+              "",
+            )
+            .replace("/src/landingBootstrap.ts", "/src/main.tsx");
+        },
+      },
     ],
+    // MapLibre starts its worker as a module worker (lib/maplibreWorker.ts).
+    worker: { format: "es" },
     optimizeDeps: {
       // MapLibre ships its worker as a sibling ESM asset. Pre-bundling the
       // package rewrites that URL into Vite's deps cache where the worker does
@@ -51,6 +65,10 @@ export default defineConfig(({ command, mode }) => {
     },
     build: {
       rolldownOptions: {
+        input: {
+          app: "index.html",
+          landing: "landing.html",
+        },
         output: {
           // Keep the optional Wind mode's map engine out of the feature
           // chunk. Spot mode never downloads either chunk, while Wind mode

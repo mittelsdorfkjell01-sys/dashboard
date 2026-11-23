@@ -2,7 +2,7 @@
 // standalone /admin/board page and embedded on the Übersicht. This component is
 // heading-less — the caller supplies whatever title/chrome fits its context.
 
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import {
   ApiError,
   createBoardTask,
@@ -20,6 +20,7 @@ import {
   useFormDirty,
   useUnsavedChangesGuard,
 } from "../../lib/useUnsavedChangesGuard";
+import { useAdminRealtimeRefresh } from "../../context/AdminRealtimeContext";
 
 type Status = "open" | "done";
 const COLUMNS: { key: Status; label: string }[] = [
@@ -38,15 +39,19 @@ export default function BoardPanel() {
   const [deleting, setDeleting] = useState(false);
   const boardRef = useRef<HTMLDivElement>(null);
 
-  const load = () =>
+  const load = useCallback(() =>
     getBoardTasks()
-      .then(setTasks)
+      .then((next) => {
+        setTasks(next);
+        setError(null);
+      })
       .catch((e) =>
         setError(e instanceof ApiError ? e.message : "Board laden fehlgeschlagen.")
-      );
+      ), []);
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
+  useAdminRealtimeRefresh(load, !newOpen && editTarget === null && !deleting);
 
   useEffect(() => {
     const onKey = (event: globalThis.KeyboardEvent) => {

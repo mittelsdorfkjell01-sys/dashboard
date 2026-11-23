@@ -11,6 +11,7 @@ import LandingFilters from "../components/LandingFilters";
 import { useLandingSpots, useSpots } from "../lib/hooks";
 import { countryName } from "../lib/flags";
 import { MapIcon } from "../lib/icons";
+import MapPill from "../components/MapPill";
 import { useDesktopViewport } from "../lib/useAutoHideHeader";
 import { useAuth } from "../context/AuthContext";
 import { useTranslation } from "react-i18next";
@@ -50,6 +51,14 @@ export default function Landing() {
   const { t } = useTranslation();
   const location = useLocation();
   const { user } = useAuth();
+  useEffect(() => {
+    const bootHero = document.getElementById("landing-boot-hero");
+    return () => {
+      // StrictMode runs an extra development cleanup while the URL is still
+      // `/`; only remove the boot layer after a real navigation away.
+      if (window.location.pathname !== "/") bootHero?.remove();
+    };
+  }, []);
   // Global landing filters (opened from the "Filter" panel, top-right). "" = no
   // constraint on that axis; sort defaults to "recommended".
   const [filterSport, setFilterSport] = useState<string>("");
@@ -200,7 +209,7 @@ export default function Landing() {
     // `landing-ink` rebinds the ink tokens to the brand petrol for this page
     // only (see index.css) — the start page's dark type is the switch blue,
     // every other page keeps the warm near-black.
-    <div className="landing-ink relative bg-page">
+    <div className="landing-ink relative">
       <LandingHeader sticky showMenu onMobileSearch={openSearch} />
 
       {/* 1 — Hero screen. The hero image sits at z-0 (a positioned descendant, so
@@ -397,14 +406,7 @@ export default function Landing() {
           "Karte" pill instead of a fixed icon in the topspots row header. Its
           semantic page colours follow the surrounding background in both
           themes; elevation keeps the control distinct from the content. */}
-      <Link
-        to="/map"
-        state={{ from }}
-        aria-label="Karte öffnen"
-        className="fixed bottom-6 left-1/2 z-sticky flex -translate-x-1/2 items-center gap-1.5 rounded-card bg-page px-4 py-2 text-ui font-normal text-ink shadow-float lg:hidden"
-      >
-        Karte <MapIcon className="text-body" />
-      </Link>
+      <MapPill to="/map" state={{ from }} className="text-ink lg:hidden" />
 
       <Footer />
     </div>

@@ -64,7 +64,24 @@ export function LenisProvider({ children }: { children: ReactNode }) {
     };
     raf = requestAnimationFrame(loop);
 
+    // Lenis re-measures the page on its own, but debounced (~250ms). Every
+    // route is a lazily loaded chunk, so right after a page swaps its one-
+    // viewport loading shell for content, Lenis still clamps against the old
+    // height: a wheel turn in that window was swallowed and the page did not
+    // move. Re-measure on the frame the height changes instead.
+    let measure = 0;
+    const observer = new ResizeObserver(() => {
+      if (measure) return;
+      measure = requestAnimationFrame(() => {
+        measure = 0;
+        instance.resize();
+      });
+    });
+    observer.observe(document.documentElement);
+
     return () => {
+      observer.disconnect();
+      if (measure) cancelAnimationFrame(measure);
       cancelAnimationFrame(raf);
       instance.destroy();
       if (_lenis === instance) _lenis = null;

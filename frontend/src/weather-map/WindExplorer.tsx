@@ -1,22 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import LeafletAttributionDisclosure from "../components/LeafletAttributionDisclosure";
 import { buildMeteogramModel } from "../components/data/meteogramModel";
 import { useRegions, useSpotForecast, useSpots } from "../lib/hooks";
 import { SPOT_DOT_COLOR } from "../lib/publicMap";
 import { spotPath } from "../lib/spotRoutes";
+import { useMapBack } from "../lib/mapBack";
 import { ChevronLeftIcon, MinusIcon, PlusIcon } from "../lib/icons";
 import { isSpotForecastDisplayHour } from "../lib/spotForecastWindow";
 import type { WhereSelection } from "../lib/searchSubmit";
 import { usePrefs } from "../context/PrefsContext";
-import type { ActiveFieldResponse, FieldDisplayMode, FieldViewportBounds } from "./contracts";
+import type { ActiveFieldResponse, FieldDisplayMode, FieldViewportBounds, WindDisplayMode } from "./contracts";
 import { REGION_FOCUS_ZOOM, SPOT_FOCUS_ZOOM } from "./camera";
 import { parseFieldUrlState, updateFieldUrl, type ExplorerMode, type FieldUrlState } from "./fieldUrlState";
 import ExplorerModeToggle from "./ExplorerModeToggle";
+import WindDisplayToggle from "./WindDisplayToggle";
 import { useFieldManifest } from "./useFieldManifest";
 import WeatherMapCanvas from "./WeatherMapCanvas";
 import MapForecastSheet from "./overlay/MapForecastSheet";
+import FieldScaleLegend from "./overlay/FieldScaleLegend";
 import FieldTimeNav, { fieldWindow } from "./overlay/FieldTimeNav";
 import { type MapForecastSlot } from "./overlay/slots";
 import { useFieldPointForecast } from "./overlay/useFieldPointForecast";
@@ -27,6 +29,22 @@ type Pick_ =
   | { kind: "point"; lon: number; lat: number }
   | { kind: "spot"; id: string };
 
+/** "icon_eu" → "ICON-EU". The model is named, never dressed up. */
+function modelLabel(model?: string | null): string | undefined {
+  return model ? model.replace(/_/g, "-").toUpperCase() : undefined;
+}
+
+/** "ICON-EU · Lauf 16.11., 06:00" — which publication is on screen. */
+function sourceLabel(model?: string | null, modelRun?: string | null): string | undefined {
+  const name = modelLabel(model);
+  if (!name) return undefined;
+  const run = modelRun ? new Date(modelRun) : null;
+  if (!run || Number.isNaN(run.getTime())) return name;
+  return `${name} · Lauf ${RUN_FORMAT.format(run)}`;
+}
+
+const RUN_FORMAT = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
 /** "54,41° N · 10,19° O" — a coordinate said the way a chart label would. */
 function coordLabel(lon: number, lat: number): string {
   const fix = (value: number) => value.toFixed(2).replace(".", ",");
@@ -34,23 +52,30 @@ function coordLabel(lon: number, lat: number): string {
 }
 
 /**
- * The public wind map and its overlay. The overlay is deliberately two things
- * and no more (2026-10-11 brief):
+ * The public wind/wave map and its overlay. The overlay stays deliberately
+ * small (2026-10-11 brief), and every piece of it is the site's own design
+ * system — light surfaces, house type, house shadows:
  *
  *   • a search glyph in the top corner — the site's one search, in place-only
  *     mode: it resolves a spot/region/place and MOVES the camera instead of
- *     leaving for the results page;
- *   • a forecast sheet docked at the bottom, opened by tapping the map. Open
- *     water answers with the wind field at that coordinate, a spot dot with
- *     that spot's own forecast — one sheet, drawn with the Spot-Daten
- *     forecast's bars.
+ *     leaving for the results page. The spot map carries the same glyph in
+ *     the same corner;
+ *   • a bottom dock holding, in one flex column, the colour scale and the
+ *     sources glyph, the clock, and the forecast sheet that a tap on the map
+ *     opens. Open water answers with the field at that coordinate, a spot dot
+ *     with that spot's own forecast.
  *
- * Everything else on top of the field is transient status (loading, error,
- * offline) and the basemap attribution the Carto licence requires. There is no
- * control bar: the layer is always `wind`, the field is drawn at the published
- * instant nearest to now, and the display follows `prefers-reduced-motion`.
- * The camera is still shared through the URL — except from an embedded map,
- * which is a passenger on someone else's route.
+ * The scale came back on 2026-11-16: the brief had removed it as a competing
+ * control surface, which left the map's main information — a whole viewport
+ * of colour — with nothing that said what it meant. It is a legend, not a
+ * control: it names the house wind scale the field is painted with and the
+ * publication it belongs to.
+ *
+ * Everything else on top of the field is transient status (error, offline).
+ * There is no control bar: the layer follows the mode, the field is drawn at
+ * the instant the clock stands on, and the display follows
+ * `prefers-reduced-motion`. The camera is still shared through the URL —
+ * except from an embedded map, which is a passenger on someone else's route.
  */
 export default function WindExplorer({
   active = true,
@@ -71,7 +96,7 @@ export default function WindExplorer({
   embedded?: boolean;
   product?: "wind" | "waves";
 }) {
-  const navigate = useNavigate();
+  const goBack = useMapBack();
   const [camera, setCamera] = useState<{ zoomIn: () => void; zoomOut: () => void }>();
   const mode: ExplorerMode = product;
   const requestedLayer = product === "waves" ? "waves" as const : "wind" as const;
@@ -123,17 +148,20 @@ export default function WindExplorer({
     () => visual?.data.series_manifests?.length ? visual.data.series_manifests : manifest ? [manifest] : [],
     [visual?.data.series_manifests, manifest],
   );
-  // Without a display switch the field draws as particles, except where motion
-  // is unwelcome. The WAVES carry no streaks at all (2026-10-12): a swell is
-  // not a flow you watch moving, and the drifting marks only broke up the
-  // colour. The wave direction stays readable in the forecast sheet.
-  const display: FieldDisplayMode = useMemo(
-    () => {
-      if (visualProduct === "waves") return "none";
-      return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "arrows" : "particles";
-    },
-    [visualProduct],
-  );
+  // The wind is drawn the way the visitor picks: particles or arrows
+  // (2026-11-19, the switch under the mode words). A shared link carries the
+  // choice in `display`; without one, particles — or arrows where motion is
+  // unwelcome. The URL's `display` only ever means this wind choice.
+  const [windDisplay, setWindDisplay] = useState<WindDisplayMode>(() => {
+    if (new URLSearchParams(window.location.search).has("display")) {
+      return urlState.current.display === "arrows" ? "arrows" : "particles";
+    }
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "arrows" : "particles";
+  });
+  // The WAVES are drawn as crests (2026-11-19): short arcs across the
+  // direction of travel, drifting slowly downwave. They replaced "no marks at
+  // all" (2026-10-12), which left the direction readable only in the sheet.
+  const display: FieldDisplayMode = visualProduct === "waves" ? "crests" : windDisplay;
   // Spot dots always overlay the wind map — they are what makes a spot tappable.
   const showSpots = true;
   const [, setLoadingTiles] = useState(false);
@@ -229,8 +257,8 @@ export default function WindExplorer({
   }, [horizon]);
 
   useEffect(() => {
-    syncUrl({ model: undefined, validAt: undefined, layer: requestedLayer, display });
-  }, [syncUrl, display, requestedLayer]);
+    syncUrl({ model: undefined, validAt: undefined, layer: requestedLayer, display: windDisplay });
+  }, [syncUrl, windDisplay, requestedLayer]);
 
   useEffect(() => {
     if (!active || embedded) return;
@@ -284,7 +312,7 @@ export default function WindExplorer({
   const Root = embedded ? "section" : "main";
 
   return (
-    <Root data-lenis-prevent className={`swd-wind-explorer${embedded ? " is-embedded" : ""}`} aria-labelledby="wind-explorer-title">
+    <Root data-lenis-prevent className={`swd-wind-explorer sw-theme-light${embedded ? " is-embedded" : ""}`} aria-labelledby="wind-explorer-title">
       {embedded
         ? <h2 id="wind-explorer-title" className="sr-only">Wetterkarte</h2>
         : <h1 id="wind-explorer-title" className="sr-only">Wetterkarten Explorer</h1>}
@@ -309,7 +337,7 @@ export default function WindExplorer({
             onReady={setCamera}
             onViewChange={(center, zoom, bounds) => {
               setMapViewport({ center, bounds });
-              syncUrl({ mode, center, zoom, validAt: undefined, model: undefined, display, layer: requestedLayer, showSpots });
+              syncUrl({ mode, center, zoom, validAt: undefined, model: undefined, display: windDisplay, layer: requestedLayer, showSpots });
             }}
             onPick={(lon, lat) => setPicked({ kind: "point", lon, lat })}
             onPickSpot={(id) => setPicked({ kind: "spot", id })}
@@ -326,7 +354,7 @@ export default function WindExplorer({
         {!embedded && (
           <>
             <div className="swd-map-controls-left pointer-events-none absolute z-scrim flex flex-col items-start gap-2">
-              <button type="button" aria-label="Zurück" onClick={() => navigate("/")} className="swd-map-bare-control pointer-events-auto">
+              <button type="button" aria-label="Zurück" onClick={goBack} className="swd-map-bare-control pointer-events-auto">
                 <ChevronLeftIcon className="text-title" />
               </button>
               <div className="pointer-events-auto flex flex-col">
@@ -335,52 +363,66 @@ export default function WindExplorer({
               </div>
             </div>
             {onModeChange && <ExplorerModeToggle mode={mode} onChange={onModeChange} />}
+            {product === "wind" && <WindDisplayToggle display={windDisplay} onChange={setWindDisplay} />}
             {/* The search is the glyph alone — no pill, no label, no second
-                implementation: `Header variant="inline"` opens the site's own
-                sheet in place-only mode. */}
+                implementation: `Header` opens the site's own sheet in
+                place-only mode, and the spot map carries the same glyph in
+                the same corner. */}
             <div className="swd-map-controls swd-wx-search pointer-events-none absolute z-scrim flex flex-col items-end gap-3">
-              <Header variant="inline" whereOnly onResolve={resolvePlace} />
+              <Header whereOnly onResolve={resolvePlace} />
             </div>
           </>
         )}
 
         {(unavailable || fieldError) && (
-          <section className="swd-field-message" role="alert">
-            <strong>{state.status === "offline" ? "Offline" : fieldError ? "Kartendaten fehlen" : `${product === "waves" ? "Wellenkarte" : "Windkarte"} noch nicht verfügbar`}</strong>
-            <p>{fieldError ?? ("message" in state ? state.message : "Die Karte wird vorbereitet.")}</p>
-            <div><button type="button" onClick={reload}>Erneut versuchen</button></div>
+          <section className="swd-field-message z-modal" role="alert">
+            <strong className="text-ui font-semibold">{state.status === "offline" ? "Offline" : fieldError ? "Kartendaten fehlen" : `${product === "waves" ? "Wellenkarte" : "Windkarte"} noch nicht verfügbar`}</strong>
+            <p className="text-caption">{fieldError ?? ("message" in state ? state.message : "Die Karte wird vorbereitet.")}</p>
+            <div><button type="button" className="text-caption" onClick={reload}>Erneut versuchen</button></div>
           </section>
         )}
 
-        {state.status === "offline" && manifest && <div className="swd-field-expired is-offline" role="status">Offline · bereits geladene Felddaten</div>}
+        {state.status === "offline" && manifest && <div className="swd-field-expired z-scrim text-caption" role="status">Offline · bereits geladene Felddaten</div>}
 
-        <LeafletAttributionDisclosure source="carto" tone="overlay" className="swd-wx-attribution" />
+        {/* The bottom edge is ONE stack: scale + sources, the clock, the
+            sheet. In flow, so nothing has to be lifted past anything else by
+            a hand-measured offset, and a phone keeps the map above it. */}
+        {embedded ? (
+          <LeafletAttributionDisclosure source="carto" />
+        ) : (
+          <div className="swd-wx-dock z-scrim">
+            <div className="swd-wx-dock-top">
+              {manifest && <FieldScaleLegend product={visualProduct} source={sourceLabel(manifest.model, manifest.model_run)} />}
+              <LeafletAttributionDisclosure source="carto" className="swd-wx-attribution" />
+            </div>
 
-        {!embedded && manifest && horizon && selectedAt !== undefined && (
-          <FieldTimeNav
-            value={selectedAt}
-            nowAt={horizon.nowAt}
-            publishedFrom={horizon.publishedFrom}
-            publishedTo={horizon.publishedTo}
-            onChange={setFieldAt}
-          />
-        )}
+            {manifest && horizon && selectedAt !== undefined && (
+              <FieldTimeNav
+                value={selectedAt}
+                nowAt={horizon.nowAt}
+                publishedFrom={horizon.publishedFrom}
+                publishedTo={horizon.publishedTo}
+                onChange={setFieldAt}
+              />
+            )}
 
-        {picked && (
-          <MapForecastSheet
-            title={picked.kind === "spot" ? pickedSpot?.name ?? "Spot" : coordLabel(picked.lon, picked.lat)}
-            titleHref={picked.kind === "spot" && pickedSpot ? spotPath(pickedSpot, "daten") : undefined}
-            meta={picked.kind === "spot" ? pickedSpot?.region : manifest?.model?.toUpperCase()}
-            slots={slots}
-            selectedUtcKey={sheetSelection}
-            onSelect={pickSheetHour}
-            onClose={closeSheet}
-            loading={sheetLoading}
-            windUnit={units.wind}
-            tempUnit={units.temp}
-            waveUnit={units.wave}
-            product={visualProduct}
-          />
+            {picked && (
+              <MapForecastSheet
+                title={picked.kind === "spot" ? pickedSpot?.name ?? "Spot" : coordLabel(picked.lon, picked.lat)}
+                titleHref={picked.kind === "spot" && pickedSpot ? spotPath(pickedSpot, "daten") : undefined}
+                meta={picked.kind === "spot" ? pickedSpot?.region : modelLabel(manifest?.model)}
+                slots={slots}
+                selectedUtcKey={sheetSelection}
+                onSelect={pickSheetHour}
+                onClose={closeSheet}
+                loading={sheetLoading}
+                windUnit={units.wind}
+                tempUnit={units.temp}
+                waveUnit={units.wave}
+                product={visualProduct}
+              />
+            )}
+          </div>
         )}
       </div>
     </Root>

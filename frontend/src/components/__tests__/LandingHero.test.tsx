@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { hasResponsiveHeroDelivery, selectLandingHeroSlides } from "../LandingHero";
+import {
+  hasResponsiveHeroDelivery,
+  orderLandingHeroSlides,
+  selectLandingHeroSlides,
+} from "../LandingHero";
 import type { Spot } from "../../lib/types";
 
 function spot(id: string, overrides: Partial<Spot> = {}): Spot {
@@ -63,5 +67,25 @@ describe("hasResponsiveHeroDelivery", () => {
       heroWidth: 3840,
       heroDelivery: "hosted",
     }))).toBe(false);
+  });
+});
+
+describe("orderLandingHeroSlides", () => {
+  it("uses a responsive hosted image first and retains every curated slide", () => {
+    const remote = spot("remote", {
+      hero: "https://images.unsplash.com/photo-123",
+      heroDelivery: "hotlinked",
+      heroCredit: { provider: "unsplash" },
+    });
+    const hosted = spot("hosted", {
+      hero: "/media/images/hash-responsive-480_1280.avif",
+      heroWidth: 1920,
+      heroDelivery: "hosted",
+    });
+
+    const ordered = orderLandingHeroSlides([remote, hosted], 123);
+
+    expect(ordered[0].id).toBe("hosted");
+    expect(ordered.map((item) => item.id).sort()).toEqual(["hosted", "remote"]);
   });
 });

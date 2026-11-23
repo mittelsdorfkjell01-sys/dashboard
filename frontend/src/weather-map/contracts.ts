@@ -1,7 +1,13 @@
 export type FieldFreshness = "fresh" | "delayed" | "stale" | "expired";
 /** How the field's direction is drawn on top of the colours. `none` draws
  *  nothing: the waves are read from the colour alone (2026-10-12). */
-export type FieldDisplayMode = "particles" | "arrows" | "none";
+/** How the field's vectors are drawn over the colour: drifting streaks or a
+ *  lattice of arrows (wind, the visitor's choice), drifting crest arcs
+ *  (waves), or nothing. */
+export type FieldDisplayMode = "particles" | "arrows" | "crests" | "none";
+
+/** The two wind drawings a visitor can pick between. */
+export type WindDisplayMode = "particles" | "arrows";
 export type FieldLayer = "wind" | "waves" | "gust" | "temperature" | "precipitation" | "pressure" | "clouds";
 
 export interface FieldViewportBounds {

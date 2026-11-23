@@ -37,6 +37,15 @@ from app.public_catalog import get_published_spot
 _ANON = "Anonym"
 
 
+
+# Areas of a spot page a visitor can flag a correction for. Mirrors
+# frontend/src/lib/spotEditTargets.ts, which owns the order and the labels;
+# a new area needs both sides.
+SPOT_EDIT_FIELDS = frozenset({
+    "name", "region", "sports", "description", "hazards", "data",
+    "facilities", "location", "photos", "other",
+})
+
 def _require_spot(db: Session, spot_id) -> Spot:
     spot = db.get(Spot, spot_id)
     if spot is None:
@@ -412,7 +421,7 @@ def create_submission(
         if spot is None:
             raise ValueError("Spot nicht gefunden.")
         field = payload.get("field")
-        if field not in {"name", "region", "sports", "description", "facilities", "location", "data", "other"}:
+        if field not in SPOT_EDIT_FIELDS:
             raise ValueError("Ungültiger Korrekturbereich.")
         message = str(payload.get("message") or "").strip()
         if not 3 <= len(message) <= 2000:

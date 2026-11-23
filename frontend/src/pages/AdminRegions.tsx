@@ -12,6 +12,7 @@ import {
 import { PageHeader, Badge, ButtonLink, SearchInput } from "../components/admin/ui";
 import { createAdminReturnState } from "../lib/adminNavigation";
 import { PlusIcon } from "../lib/icons";
+import { useAdminRealtimeRefresh } from "../context/AdminRealtimeContext";
 
 export default function AdminRegions() {
   const location = useLocation();
@@ -39,6 +40,7 @@ export default function AdminRegions() {
   useEffect(() => {
     void load();
   }, [load]);
+  useAdminRealtimeRefresh(load);
 
   useEffect(() => setSearchText(q), [q]);
   useEffect(() => {

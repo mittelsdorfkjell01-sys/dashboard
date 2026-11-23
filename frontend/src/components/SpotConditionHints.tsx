@@ -107,7 +107,9 @@ export default function SpotConditionHints({
             onClick={() => setTimingOpen((open) => !open)}
             aria-expanded={timingOpen}
             aria-controls="spot-forecast-validity"
-            className="grid h-6 w-6 place-items-center rounded-full text-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            // 44px target around the 24px mark; the negative margin keeps the
+            // glyph exactly where it was.
+            className="-m-2.5 grid h-11 w-11 place-items-center rounded-full text-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
             {/* Not the red exclamation mark: that glyph marks a hazard on this
                 page, and spending it on a timestamp would teach people to

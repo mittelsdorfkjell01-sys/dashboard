@@ -23,6 +23,7 @@ import {
   rememberAdminSpotSearch,
 } from "../lib/adminSpotSearchHistory";
 import { countActiveAdminSpotFilters, resetAdminSpotFilters } from "../lib/adminSpotFilters";
+import { useAdminRealtimeRefresh } from "../context/AdminRealtimeContext";
 
 const MEDIA_FILTER_LABEL: Record<MediaFilterKey, string> = {
   no_hero: "Kein Hero",
@@ -95,6 +96,7 @@ export default function AdminSpots() {
   useEffect(() => {
     void load();
   }, [load]);
+  useAdminRealtimeRefresh(load);
 
   useEffect(() => setSearchText(q), [q]);
 

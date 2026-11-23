@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { keyboardLikelyOpen, useVisualViewportBox } from "../lib/useVisualViewportBox";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
@@ -98,6 +99,13 @@ export default function MobileSearchSheet({
   const [whenTab, setWhenTab] = useState<WhenTab>("date");
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  // While open, the sheet follows the visual viewport, so the soft keyboard
+  // does not hide the lower results and the action bar (see the hook).
+  const visualBox = useVisualViewportBox(open);
+  // Keyboard up: the field submits with the keyboard's own search key, so the
+  // action bar steps aside and the results get the little height there is.
+  const keyboardOpen = keyboardLikelyOpen(visualBox);
 
   // Native-CSS slide state (see SHEET_SLIDE_MS). `mounted` keeps the node in the
   // DOM through the close animation; `slidIn` toggles the transform a frame
@@ -251,6 +259,21 @@ export default function MobileSearchSheet({
     saveSearchDraft(val);
     navigate(`/search?${buildSearchParams(val).toString()}`);
     onClose();
+  };
+
+  // The keyboard's search/enter key in "Wohin?". It used to do nothing, so the
+  // only way on was to close the keyboard first to reach "Suchen". Mirrors the
+  // desktop bar's Enter: typed text advances to the date step (the keyboard
+  // closes, the action bar returns); an empty field or a place-only search
+  // submits straight away.
+  const onWhereSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!whereOnly && val.whereText.trim()) {
+      whereInputRef.current?.blur();
+      setSection("when");
+      return;
+    }
+    submit();
   };
 
   // "Alles löschen": clear the search but stay in the sheet (Airbnb-style).
@@ -422,7 +445,7 @@ export default function MobileSearchSheet({
       aria-modal="true"
       aria-label="Suche"
       tabIndex={-1}
-      style={sheetStyle}
+      style={visualBox ? { ...sheetStyle, top: visualBox.top, height: visualBox.height } : sheetStyle}
     >
           {/* Grab handle — swipe down to close. */}
           <div
@@ -488,8 +511,11 @@ export default function MobileSearchSheet({
                 open={section === "where"}
                 onToggle={() => toggleSection("where")}
               >
+                <form role="search" onSubmit={onWhereSubmit}>
                 <input
                   ref={whereInputRef}
+                  type="search"
+                  enterKeyHint={!whereOnly && val.whereText.trim() ? "next" : "search"}
                   value={val.whereText}
                   onChange={(e) =>
                     setVal((v) => ({
@@ -503,6 +529,7 @@ export default function MobileSearchSheet({
                   aria-label="Region oder Spot suchen"
                   className="search-plain w-full border-0 bg-transparent text-body text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
                 />
+                </form>
                 <div className="mt-3">
                   {placeLoading ? (
                     <p role="status" className="px-1.5 py-3 text-ui text-muted">Orte werden geladen …</p>
@@ -600,9 +627,7 @@ export default function MobileSearchSheet({
                         onClick={() =>
                           setVal((v) => ({
                             ...v,
-                            which: selected
-                              ? v.which.filter((s) => s !== sport)
-                              : [...v.which, sport],
+                            which: selected ? [] : [sport],
                           }))
                         }
                         aria-pressed={selected}
@@ -638,7 +663,7 @@ export default function MobileSearchSheet({
           </div>
 
           {/* Actions — a text-link clear + a filled primary search button. */}
-          <div className="border-t border-line bg-page px-4 pb-6 pt-3">
+          <div hidden={keyboardOpen} className="border-t border-line bg-page px-4 pb-6 pt-3">
             <div className="mx-auto flex w-full max-w-[520px] items-center justify-between gap-3">
               <button
                 type="button"

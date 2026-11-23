@@ -9,7 +9,7 @@ CONTENT_SECURITY_POLICY = (
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
     "font-src 'self' data: https://fonts.gstatic.com; "
     "img-src 'self' data: blob: https:; "
-    "connect-src 'self' https://api.maptiler.com https://*.maptiler.com https://*.cartocdn.com; "
+    "connect-src 'self' https://api.maptiler.com https://*.maptiler.com https://*.cartocdn.com https://tiles.openfreemap.org; "
     "worker-src 'self' blob:; manifest-src 'self'"
 )
 
@@ -20,7 +20,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         response.headers.setdefault(
-            "Permissions-Policy", "camera=(), microphone=(), geolocation=()"
+            "Permissions-Policy", "camera=(), microphone=(), geolocation=(self)"
         )
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("Content-Security-Policy", CONTENT_SECURITY_POLICY)

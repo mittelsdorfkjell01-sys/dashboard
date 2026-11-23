@@ -1,0 +1,401 @@
+/* ==========================================================================
+   Public map (2026-11-19 redesign, reworked 2026-11-20) — one surface for
+   Spots, Wind and Wellen that follows the site theme. In light mode
+   `.sw-theme-light` gives every panel the house light tokens; in dark mode the
+   house dark tokens apply. Map-local values are only the mark colours, halos
+   and the ground behind the vector tiles.
+   ========================================================================== */
+
+.swd-pm {
+  --pm-spot: #1A1F24;
+  /* the ring around a dot and the mark inside it: the ground's opposite */
+  --pm-ring: #FFFFFF;
+  --pm-name-halo: #FFFFFF;
+  --pm-ground: #D6E3EA;
+  --pm-selection: #F06F4F;
+  --pm-user: #1E7BF2;
+  /* No shadow on glyphs (2026-11-21, "ganz klar, kein Schatten"). */
+  --pm-glyph-halo: none;
+  --pm-mark-halo: 0 1px 4px rgb(15 25 25 / 35%);
+  --pm-glass: rgb(255 255 255 / 86%);
+  --pm-tick: #CFC8BE;
+  --pm-gap: calc(12px + env(safe-area-inset-bottom, 0px));
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--pm-ground);
+  color: var(--sw-ink);
+  touch-action: none;
+}
+/* Dark (2026-11-20): light dots and glyphs with a dark ring/halo. */
+.swd-pm.is-dark {
+  --pm-spot: #F1EDE7;
+  --pm-ring: #0E1114;
+  --pm-name-halo: #0E1114;
+  --pm-ground: #13202A;
+  --pm-mark-halo: 0 1px 4px rgb(0 0 0 / 60%);
+  --pm-glass: rgb(26 31 36 / 88%);
+  --pm-tick: #3A3F44;
+  color-scheme: dark;
+}
+/* The house dark band is darker than the surface; on a floating pill that
+   reads as a hole, so active states lift by one tone instead. */
+.swd-pm.is-dark .swd-pm-mode[aria-pressed="true"],
+.swd-pm.is-dark .swd-pm-segment button[aria-checked="true"] { background: var(--sw-line); }
+
+.swd-pm-ground,
+.swd-pm-names { position: absolute; inset: 0; }
+.swd-pm-names { pointer-events: none; z-index: 5; }
+.swd-pm-names .maplibregl-canvas { background: transparent; }
+/* The water mask renders off-screen-ish: laid out (MapLibre needs a size)
+   but never seen or hit. */
+.swd-pm-mask { position: absolute; inset: 0; z-index: -1; opacity: 0; pointer-events: none; }
+
+/* The field canvases live inside the ground map's container, in this order. */
+.swd-pm .swd-pm-field,
+.swd-pm .swd-pm-particles,
+.swd-pm .swd-pm-arrows {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.swd-pm .swd-pm-field { z-index: 2; }
+.swd-pm .swd-pm-particles { z-index: 3; }
+.swd-pm .swd-pm-arrows { z-index: 4; }
+
+/* --- spot marks -------------------------------------------------------- */
+.swd-pm-marks { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+
+.swd-pm-spot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  pointer-events: auto;
+}
+.swd-pm-dot {
+  display: grid;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--pm-spot);
+  color: var(--pm-ring);
+  box-shadow: var(--pm-mark-halo), 0 0 0 2px var(--pm-ring);
+  transition: transform 0.18s var(--sw-ease, ease);
+}
+.swd-pm-spot.is-editorial .swd-pm-dot { width: 16px; height: 16px; }
+.swd-pm-spot.is-community .swd-pm-dot { background: var(--pm-ring); box-shadow: var(--pm-mark-halo), inset 0 0 0 3px var(--pm-spot); }
+.swd-pm-spot:hover .swd-pm-dot,
+.swd-pm-spot:focus-visible .swd-pm-dot { transform: scale(1.15); }
+.swd-pm-spot:focus-visible { outline: 2px solid var(--sw-accent); outline-offset: -6px; }
+.swd-pm-spot.is-selected .swd-pm-dot { transform: scale(1.4); box-shadow: var(--pm-mark-halo), 0 0 0 2px var(--pm-ring), 0 0 0 3.5px var(--pm-selection); }
+.swd-pm-name {
+  position: absolute;
+  top: 34px;
+  /* Centred on whole pixels (a -50% translate lands on half pixels and
+     blurs the text) and without a text-shadow halo (2026-11-21). */
+  left: -78px;
+  width: 200px;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--sw-ink);
+  pointer-events: none;
+}
+
+.swd-pm-cluster {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--sw-surface);
+  box-shadow: var(--pm-mark-halo);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sw-ink);
+  pointer-events: auto;
+}
+.swd-pm-cluster::before { content: ""; position: absolute; inset: -8px; border-radius: 999px; } /* 44px target */
+.swd-pm-cluster:focus-visible { outline: 2px solid var(--sw-accent); outline-offset: 2px; }
+
+.swd-pm-user,
+.swd-pm-tapmark { position: absolute; left: 0; top: 0; z-index: 6; pointer-events: none; }
+.swd-pm-user { width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 999px; background: var(--pm-user); box-shadow: 0 0 0 3px var(--pm-ring), 0 0 0 14px rgb(30 123 242 / 16%); }
+.swd-pm-tapmark { width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 999px; border: 2px solid var(--pm-spot); box-shadow: 0 0 0 1.5px var(--pm-ring); }
+.swd-pm-tapmark::after { content: ""; position: absolute; inset: 5px; border-radius: 999px; background: var(--pm-spot); }
+
+.swd-pm-tip {
+  position: absolute;
+  z-index: 7;
+  transform: translate(-50%, calc(-100% - 16px));
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: var(--sw-ink);
+  color: var(--sw-page);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--sw-shadow-card);
+}
+
+/* --- glyphs: bare marks, no surface ---------------------------------- */
+.swd-pm-glyph {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  color: var(--pm-spot);
+  filter: var(--pm-glyph-halo);
+}
+.swd-pm-glyph[aria-pressed="true"] { color: var(--sw-accent); }
+.swd-pm-glyph:focus-visible { outline: 2px solid var(--sw-accent); outline-offset: -2px; }
+.swd-pm-back { position: absolute; z-index: 8; top: calc(8px + env(safe-area-inset-top, 0px)); left: calc(8px + env(safe-area-inset-left, 0px)); }
+.swd-pm-glyphs {
+  position: absolute;
+  z-index: 8;
+  top: calc(8px + env(safe-area-inset-top, 0px));
+  right: calc(8px + env(safe-area-inset-right, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.swd-pm-search { display: grid; place-items: center; width: 44px; height: 44px; color: var(--pm-spot); filter: var(--pm-glyph-halo); }
+.swd-pm-search .swd-inline-search button { width: 44px; height: 44px; border: 0; background: transparent; box-shadow: none; color: inherit; }
+.swd-pm-search .swd-inline-search button svg { width: 22px; height: 22px; }
+
+/* --- mode switch: flat pill, centred at the top ----------------------- */
+.swd-pm-modeswitch {
+  position: absolute;
+  z-index: 10;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  /* Centred by margin, not translate(-50%): no half-pixel offset, so the
+     words stay sharp (2026-11-21). */
+  left: 0;
+  right: 0;
+  width: max-content;
+  margin-inline: auto;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--sw-surface);
+  box-shadow: var(--sw-shadow-float);
+}
+/* Fixed widths (2026-11-21, "der Toggle soll immer gleich groß sein"): the
+   active segment always takes the width of the longest word ("Wellen"), the
+   others the icon width — so the pill never changes size between modes. */
+.swd-pm-mode { position: relative; display: flex; align-items: center; justify-content: center; gap: 5px; width: 40px; height: 30px; padding: 0; border-radius: 999px; color: var(--sw-muted); }
+.swd-pm-mode[aria-pressed="true"] { width: 92px; }
+.swd-pm-mode::before { content: ""; position: absolute; inset: -7px 0; } /* 44px touch target */
+.swd-pm-mode svg { font-size: 1rem; }
+.swd-pm-mode-label { display: none; font-size: 13px; font-weight: 500; }
+.swd-pm-mode[aria-pressed="true"] { background: var(--sw-band); color: var(--sw-ink); }
+.swd-pm-mode[aria-pressed="true"] .swd-pm-mode-label { display: inline; font-weight: 600; }
+.swd-pm-mode:focus-visible { outline: 2px solid var(--sw-accent); outline-offset: 2px; }
+
+/* --- popovers (layers, list) ------------------------------------------- */
+.swd-pm-pop {
+  position: absolute;
+  z-index: 11;
+  top: calc(68px + env(safe-area-inset-top, 0px));
+  right: calc(60px + env(safe-area-inset-right, 0px));
+  width: min(300px, calc(100vw - 76px));
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border-radius: var(--sw-radius, 14px);
+  background: var(--sw-surface);
+  box-shadow: var(--sw-shadow-float);
+}
+.swd-pm-pop h2 { margin-bottom: 4px; }
+.swd-pm-pop ul { margin: 0 -14px; max-height: min(60vh, 420px); overflow: auto; }
+.swd-pm-pop li button { display: flex; width: 100%; align-items: center; gap: 12px; min-height: 44px; padding: 6px 14px; text-align: left; }
+.swd-pm-pop li button:hover,
+.swd-pm-pop li button:focus-visible { background: var(--sw-line-soft); outline: none; }
+.swd-pm-switch { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
+.swd-pm-switch input {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 24px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--sw-line);
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.swd-pm-switch input::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--sw-surface);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 30%);
+  transition: transform 0.18s var(--sw-ease, ease);
+}
+.swd-pm-switch input:checked { background: var(--sw-accent); }
+.swd-pm-switch input:checked::after { transform: translateX(16px); }
+.swd-pm-switch input:focus-visible { outline: 2px solid var(--sw-accent); outline-offset: 2px; }
+/* Either/or choices (particles | arrows, wave parts): one segmented pill. */
+.swd-pm-segment { display: flex; gap: 2px; margin: 4px 0; padding: 3px; border-radius: 999px; background: var(--sw-tile); }
+.swd-pm-segment button { flex: 1; height: 38px; border-radius: 999px; color: var(--sw-muted); font-weight: 500; }
+.swd-pm-segment button[aria-checked="true"] { background: var(--sw-surface); color: var(--sw-ink); font-weight: 600; box-shadow: var(--sw-shadow-card); }
+.swd-pm-segment button:disabled { opacity: 0.45; cursor: not-allowed; }
+.swd-pm-segment button:focus-visible { outline: 2px solid var(--sw-accent); outline-offset: -2px; }
+
+.swd-pm-message {
+  position: absolute;
+  z-index: 9;
+  top: calc(68px + env(safe-area-inset-top, 0px));
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  display: flex;
+  width: min(360px, calc(100vw - 32px));
+  box-sizing: border-box;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: var(--sw-radius, 14px);
+  background: var(--sw-surface);
+  box-shadow: var(--sw-shadow-float);
+}
+.swd-pm-message button { min-height: 44px; }
+.swd-pm-notice {
+  position: absolute;
+  z-index: 9;
+  top: calc(68px + env(safe-area-inset-top, 0px));
+  left: 0;
+  right: 0;
+  width: max-content;
+  margin-inline: auto;
+  max-width: calc(100vw - 32px);
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--sw-ink);
+  color: var(--sw-page);
+  box-shadow: var(--sw-shadow-card);
+}
+
+/* --- bottom dock: legend · slim spot bar · forecast tile ----------------- */
+.swd-pm-dock {
+  position: absolute;
+  z-index: 10;
+  left: 0;
+  right: 0;
+  bottom: var(--pm-gap);
+  margin-inline: auto;
+  display: flex;
+  width: min(720px, calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  pointer-events: none;
+}
+.swd-pm-dock > * { pointer-events: auto; }
+
+/* The slim bar: the height of one row (2026-11-20). */
+.swd-pm-bar {
+  position: relative;
+  border-radius: var(--sw-radius, 14px);
+  background: var(--sw-surface);
+  box-shadow: var(--sw-shadow-float);
+  animation: swd-pm-rise 0.2s var(--sw-ease, ease);
+}
+.swd-pm-bar-row { display: flex; min-height: 56px; align-items: center; gap: 8px; padding: 4px 4px 4px 14px; }
+.swd-pm-bar-values { display: flex; flex: none; flex-direction: column; align-items: flex-end; gap: 1px; white-space: nowrap; }
+.swd-pm-bar-link { display: flex; height: 44px; align-items: center; gap: 2px; padding: 0 4px 0 8px; white-space: nowrap; }
+.swd-pm-bar-link:hover .swd-pm-bar-link-text { text-decoration: underline; }
+.swd-pm-bar-link:focus-visible,
+.swd-pm-close:focus-visible,
+.swd-pm-hazard-btn:focus-visible { outline: 2px solid var(--sw-accent); outline-offset: -2px; }
+.swd-pm-close { display: grid; flex: none; place-items: center; width: 40px; height: 44px; border-radius: 999px; color: var(--sw-muted); }
+.swd-pm-hazard-btn { position: relative; display: grid; place-items: center; width: 22px; height: 22px; flex: none; border-radius: 999px; }
+.swd-pm-hazard-btn::before { content: ""; position: absolute; inset: -11px; } /* 44px target */
+.swd-pm-hazard { display: grid; flex: none; place-items: center; width: 18px; height: 18px; border-radius: 999px; background: var(--sw-danger); color: var(--sw-surface); font-size: 12px; font-weight: 700; line-height: 1; }
+.swd-pm-bar-hazard { display: flex; align-items: flex-start; gap: 8px; padding: 10px 14px 0; }
+.swd-pm-icon-gap { display: inline-block; width: 14px; flex: none; }
+@keyframes swd-pm-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* The forecast tile: the strip IS the clock. With a place selected
+   (2026-11-21, simplified) the forecast sits in the strip's own hour columns
+   — wind bar + value + direction, wave height + direction — instead of a
+   meteogram above it. Opaque on purpose: micro figures over moving particles
+   would not stay readable through a translucent tile. */
+.swd-pm-tile-source { padding: 0 14px 8px; }
+.swd-pm-tile.has-forecast .swd-pm-tile-col { animation: swd-pm-rise 0.2s var(--sw-ease, ease); }
+/* Row key, pinned left: values scroll underneath behind a surface fade. */
+.swd-pm-tile-legend {
+  position: absolute;
+  top: 0;
+  bottom: 8px;
+  left: 0;
+  width: 34px;
+  pointer-events: none;
+  color: var(--sw-muted);
+  background: linear-gradient(90deg, var(--sw-surface) 60%, transparent);
+}
+.swd-pm-tile-legend svg { position: absolute; left: 9px; width: 14px; height: 14px; }
+.swd-pm-tile-legend-wind { top: 22px; }
+.swd-pm-tile-legend-wave { top: 76px; }
+.swd-pm-tile {
+  overflow: hidden;
+  border-radius: var(--sw-radius, 14px);
+  background: var(--sw-surface);
+  box-shadow: var(--sw-shadow-float);
+}
+.swd-pm-tile-head { display: flex; min-height: 44px; align-items: center; gap: 8px; padding: 4px 4px 0 14px; }
+.swd-pm-tile-spot { max-width: 40vw; margin-right: 6px; font-weight: 500; }
+.swd-pm-play { display: grid; flex: none; place-items: center; width: 40px; height: 40px; border-radius: 999px; background: var(--sw-ink); color: var(--sw-surface); }
+.swd-pm-play:focus-visible { outline: 2px solid var(--sw-accent); outline-offset: 2px; }
+.swd-pm-tile-strip-wrap { position: relative; }
+.swd-pm-tile-strip { display: flex; overflow-x: auto; overscroll-behavior-x: contain; touch-action: pan-x; cursor: grab; padding-bottom: 8px; }
+.swd-pm-tile-strip.is-dragging { cursor: grabbing; user-select: none; }
+.swd-pm-tile-strip:focus-visible { outline: 2px solid var(--sw-accent); outline-offset: -2px; }
+.swd-pm-tile-pad { flex: none; width: calc(50% - 15px); }
+.swd-pm-tile-col { position: relative; display: flex; flex: none; width: 30px; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; padding-top: 2px; }
+.swd-pm-tile-col > .font-num { height: 13px; line-height: 13px; white-space: nowrap; }
+.swd-pm-tile-col.is-midnight { box-shadow: inset 1px 0 0 var(--sw-line); }
+.swd-pm-tile-col.is-now::after { content: ""; position: absolute; bottom: -5px; left: 50%; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 999px; background: var(--sw-accent); }
+.swd-pm-tile-bars { position: relative; display: flex; width: 16px; height: 28px; align-items: flex-end; justify-content: center; }
+.swd-pm-tile-bar { position: relative; width: 16px; border-radius: 3px; }
+.swd-pm-tile-gust { position: absolute; bottom: 0; width: 16px; border-radius: 3px; opacity: 0.35; }
+.swd-pm-tile-dir { display: grid; height: 13px; place-items: center; }
+.swd-pm-tile-tick { width: 1px; height: 10px; margin-top: 2px; background: var(--pm-tick); }
+.swd-pm-tile-col.is-midnight .swd-pm-tile-tick { height: 16px; width: 1.5px; background: var(--sw-muted); }
+.swd-pm-tile-needle { position: absolute; top: 0; bottom: 6px; left: 50%; width: 2px; margin-left: -1px; border-radius: 2px; background: var(--sw-ink); opacity: 0.75; pointer-events: none; }
+
+@media (max-width: 350px) {
+  .swd-pm-mode[aria-pressed="true"] .swd-pm-mode-label { display: none; }
+  .swd-pm-mode[aria-pressed="true"] { width: 48px; }
+  .swd-pm-bar-link-text { display: none; }
+}
+@media (max-width: 420px) {
+  .swd-pm-bar-link-text { display: none; }
+}
+@media (min-width: 900px) {
+  .swd-pm-mode-label { display: inline; }
+  .swd-pm-mode,
+  .swd-pm-mode[aria-pressed="true"] { width: 104px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swd-pm *,
+  .swd-pm *::before,
+  .swd-pm *::after { animation: none !important; transition: none !important; }
+}

@@ -120,9 +120,9 @@ export default function Climatology({ spot }: { spot: Spot }) {
       <h3 className="text-lg font-semibold tracking-tight text-ink">Windmonate</h3>
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         {/* Wind-window selection. */}
-        <div className="no-scrollbar flex min-w-0 max-w-full overflow-x-auto rounded-full bg-band p-1" aria-label="Windfenster">{WINDOWS.map(([key, label]) => <button key={key} type="button" onClick={() => { setWindowKey(key); sessionStorage.setItem("wind-window", key); }} aria-pressed={windowKey === key} className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors ${windowKey === key ? "bg-ink/10 text-ink" : "text-muted hover:text-ink"}`}>{label}</button>)}</div>
+        <div className="no-scrollbar flex min-w-0 max-w-full overflow-x-auto rounded-full bg-band" aria-label="Windfenster">{WINDOWS.map(([key, label]) => <button key={key} type="button" onClick={() => { setWindowKey(key); sessionStorage.setItem("wind-window", key); }} aria-pressed={windowKey === key} className={`min-h-11 whitespace-nowrap rounded-full px-3 text-caption font-medium transition-colors ${windowKey === key ? "bg-ink/10 text-ink" : "text-muted hover:text-ink"}`}>{label}</button>)}</div>
         {/* Unit toggle: one tap swaps Prozent ↔ Stunden pro Tag. */}
-        <button type="button" onClick={toggleUnit} aria-label={`Einheit umschalten, aktuell ${unit === "percent" ? "Prozent" : "Stunden pro Tag"}`} className="inline-flex shrink-0 items-center gap-1 rounded-full bg-band px-3 py-1.5 text-xs font-medium text-ink transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink">
+        <button type="button" onClick={toggleUnit} aria-label={`Einheit umschalten, aktuell ${unit === "percent" ? "Prozent" : "Stunden pro Tag"}`} className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full bg-band px-3 text-caption font-medium text-ink transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink">
           {unit === "percent" ? "%" : "h/Tag"}
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
@@ -214,7 +214,7 @@ export default function Climatology({ spot }: { spot: Spot }) {
         aria-controls="climatology-info"
         aria-label={infoOpen ? "Methodische Hinweise ausblenden" : "Methodische Hinweise anzeigen"}
         title={infoOpen ? "Methodische Hinweise ausblenden" : "Methodische Hinweise anzeigen"}
-        className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/30"
+        className="-m-1.5 flex h-11 w-11 items-center justify-center rounded-full text-muted transition-colors hover:text-ink"
       >
         <InfoIcon className="h-5 w-5" />
       </button>
@@ -261,7 +261,7 @@ function ClimatologyEmptyState({ state, onRetry }: {
       <div role={state === "error" ? "alert" : "status"} className="mt-2 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
         <p className="text-sm text-muted">{copy}</p>
         {state === "error" && onRetry && (
-          <button type="button" onClick={onRetry} className="text-sm font-medium text-teal underline decoration-teal/40 underline-offset-4 hover:text-teal-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/30">
+          <button type="button" onClick={onRetry} className="text-sm font-medium text-teal underline decoration-teal/40 underline-offset-4 hover:text-teal-hover">
             Erneut laden
           </button>
         )}

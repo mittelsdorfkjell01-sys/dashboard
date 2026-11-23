@@ -61,6 +61,10 @@ test("landing remains usable with an empty catalogue", async ({ page }) => {
 });
 
 test("region detail renders its empty state", async ({ page }) => {
+  // The section bands fade in on scroll. Without reduced motion axe measured
+  // their colours mid-fade (opacity 0, blended text) and flagged contrast in
+  // Firefox — the finished page was never the problem.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await mockPublicApi(page);
   await page.goto("/region/kieler-bucht");
   await expect(page.getByRole("heading", { name: "Kieler Bucht", exact: true })).toBeVisible();

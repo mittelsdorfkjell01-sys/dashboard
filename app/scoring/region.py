@@ -18,11 +18,14 @@ from app.scoring.params import WEEK_GOOD_THRESHOLD, get_params
 N_WEEKS = 52
 
 
-def _spot_curve_and_threshold(spot, sport, profile, db=None):
+def _spot_curve_and_threshold(spot, sport, profile, db=None, params_by_sport=None):
     sp = sport or primary_sport(spot)
     if sp is None:
         return [0.0] * N_WEEKS, 1.0
-    params = get_params(sp, db)
+    params_by_sport = params_by_sport if params_by_sport is not None else {}
+    if sp not in params_by_sport:
+        params_by_sport[sp] = get_params(sp, db)
+    params = params_by_sport[sp]
     scores = [0.0] * N_WEEKS
     clim = getattr(spot, "climatology", None)
     if isinstance(clim, dict) and clim.get("weeks"):
@@ -43,7 +46,11 @@ def region_season_weeks(
     db: Any | None = None,
 ) -> list[dict]:
     """Pure core: the 52-week aggregate for a region's spots."""
-    curves_thresholds = [_spot_curve_and_threshold(s, sport, profile, db) for s in spots]
+    params_by_sport: dict[str, dict] = {}
+    curves_thresholds = [
+        _spot_curve_and_threshold(s, sport, profile, db, params_by_sport)
+        for s in spots
+    ]
 
     weeks: list[dict] = []
     for w in range(1, N_WEEKS + 1):
@@ -74,7 +81,11 @@ def region_score_series(
     db: Any | None = None,
 ) -> list[float]:
     """Per-week region score = the best spot's ``pct_usable`` (for ranking/curve)."""
-    curves = [_spot_curve_and_threshold(s, sport, profile, db)[0] for s in spots]
+    params_by_sport: dict[str, dict] = {}
+    curves = [
+        _spot_curve_and_threshold(s, sport, profile, db, params_by_sport)[0]
+        for s in spots
+    ]
     return [max((c[w - 1] for c in curves), default=0.0) for w in range(1, N_WEEKS + 1)]
 
 

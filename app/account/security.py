@@ -56,14 +56,23 @@ def decode_app_session_token(token: str) -> dict:
 
 
 def create_account_action_token(
-    user_id: uuid.UUID, *, purpose: str, version: int, email: str | None = None
+    user_id: uuid.UUID,
+    *,
+    purpose: str,
+    version: int,
+    email: str | None = None,
+    device: str | None = None,
 ) -> str:
+    """`device` is the SHA-256 of a nonce held in an httpOnly cookie by the
+    browser that registered; see `app.account.service.device_hash`."""
     now = dt.datetime.now(dt.timezone.utc)
     payload = {
         "sub": str(user_id), "typ": "app-action", "purpose": purpose,
         "ver": version, "email": email, "iat": now,
         "exp": now + dt.timedelta(hours=1 if purpose == "reset" else 24),
     }
+    if device:
+        payload["dev"] = device
     return jwt.encode(payload, get_settings().jwt_secret, algorithm=_ALG)
 
 

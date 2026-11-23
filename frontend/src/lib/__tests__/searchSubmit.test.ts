@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { buildSearchParams, EMPTY_SEARCH, loadSearchDraft, saveSearchDraft } from "../searchSubmit";
+import {
+  buildSearchParams,
+  EMPTY_SEARCH,
+  loadSearchDraft,
+  saveSearchDraft,
+  searchDateRangeLabel,
+  weeksFromWhen,
+  whenLabel,
+} from "../searchSubmit";
 
 describe("buildSearchParams", () => {
   it("keeps an empty search as the intentional discovery route", () => {
@@ -18,8 +26,30 @@ describe("buildSearchParams", () => {
     expect(params.get("q")).toBe("Tarifa");
     expect(params.get("region_id")).toBe("region-1");
     expect(params.get("sport")).toBe("kitesurf");
+    expect(params.get("weeks")).toBe("40-40");
     expect(params.get("from")).toBe("2026-10-03");
     expect(params.get("to")).toBe("2026-10-04");
+  });
+
+  it("sends only the single supported sport selection", () => {
+    const params = buildSearchParams({
+      ...EMPTY_SEARCH,
+      which: ["kitesurf", "wing"],
+    });
+    expect(params.get("sport")).toBe("kitesurf");
+    expect(params.has("sports")).toBe(false);
+  });
+});
+
+describe("calendar dates", () => {
+  it("uses the entered calendar day for ISO weeks without a UTC date shift", () => {
+    expect(weeksFromWhen({ mode: "range", from: "2026-10-05" })).toBe("41-41");
+  });
+
+  it("formats exact ranges without changing their calendar dates", () => {
+    const range = { mode: "range", from: "2026-10-05", to: "2026-11-02" } as const;
+    expect(whenLabel(range)).toBe("5.10. – 2.11.");
+    expect(searchDateRangeLabel(range.from, range.to)).toBe("5. Oktober – 2. November");
   });
 });
 

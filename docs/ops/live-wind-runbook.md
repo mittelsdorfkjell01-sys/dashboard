@@ -135,7 +135,11 @@ Configure the GitHub Actions workflow `.github/workflows/live-wind-shadow.yml`:
   path on the persistent runner to a separately reviewed training inventory;
 - secrets `DIRECT_DATABASE_URL`, `REDIS_URL`, `LIVE_WIND_CRON_SECRET`, and
   `LIVE_WIND_WORKER_JWT_SECRET`;
-- the API deployment's `CRON_SECRET` must equal `LIVE_WIND_CRON_SECRET`.
+- the API deployment's `CRON_SECRET` must equal `LIVE_WIND_CRON_SECRET`;
+- the single API deployment targeted by both endpoint variables must set
+  `RUN_MAINTENANCE_CRONS=true` for the bounded campaign. Keep it `false` on all
+  other deployments. The workflow intentionally fails when either endpoint
+  responds with `status=skipped`, so verify this before the first scheduled run;
 - a Linux self-hosted runner labelled `live-wind`, with a persistent shared
   read/write mount configured as `LIVE_WIND_EXACT_RUN_CACHE_DIR`. The path must
   itself be an absolute Linux mount point, not overlay/tmpfs. Provision a stable

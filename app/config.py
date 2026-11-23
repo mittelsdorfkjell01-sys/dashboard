@@ -637,6 +637,21 @@ class Settings(BaseSettings):
     account_smtp_password: str | None = None
     account_smtp_from: str | None = None
     account_smtp_starttls: bool = True
+    # --- Sign in with Google / Apple (2026-11-21) ---------------------------
+    # Each provider is offered only when ALL of its settings are present; the
+    # sign-in page asks /account/oauth/providers and shows no dead button.
+    # `account_api_public_origin` is where the browser reaches THIS API (the
+    # providers redirect back to <origin>/account/oauth/<provider>/callback);
+    # register exactly that URL with Google and Apple.
+    account_api_public_origin: str = "http://localhost:8000"
+    google_oauth_client_id: str | None = None
+    google_oauth_client_secret: str | None = None
+    # Apple: the Services ID (client id), the team, and a "Sign in with Apple"
+    # key (its id and the .p8 PEM contents; newlines may be written as \n).
+    apple_oauth_client_id: str | None = None
+    apple_oauth_team_id: str | None = None
+    apple_oauth_key_id: str | None = None
+    apple_oauth_private_key: str | None = None
     ugc_personal_data_retention_days: int = 90
     user_event_anon_retention_days: int = Field(default=180, ge=1, le=3650)
     scoring_calibration_min_profiles: int = Field(default=30, ge=5, le=10000)
@@ -667,6 +682,18 @@ class Settings(BaseSettings):
     wikimedia_user_agent: str = (
         "surfwinddata/1.0 (https://surfwinddata.com; admin@surfwinddata.com)"
     )
+    # Nearby map POIs come from a bounded Overpass query, never from the OSM
+    # tile servers. The long cache protects the public best-effort service.
+    osm_overpass_url: str = "https://overpass.private.coffee/api/interpreter"
+    osm_overpass_fallback_url: str = "https://overpass-api.de/api/interpreter"
+    osm_overpass_europe_url: str = "https://ovp.dresel.systems/api/interpreter"
+    osm_user_agent: str = (
+        "surfwinddata/1.0 (https://surfwinddata.com; admin@surfwinddata.com)"
+    )
+    # Per attempt. European requests normally use one attempt; global requests
+    # can fail over once while staying inside the frontend's 12-second budget.
+    osm_poi_timeout_seconds: float = Field(default=5.0, ge=2.0, le=10.0)
+    osm_poi_cache_ttl_seconds: int = Field(default=604_800, ge=3600, le=2_592_000)
     # Upstream requests allowed per provider per clock hour. Unsplash's demo
     # tier is 50/h — the cache below is what makes that workable, not an
     # optimisation. Production access (after their review) is 5000/h.
