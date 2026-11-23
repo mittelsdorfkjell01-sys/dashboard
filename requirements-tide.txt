@@ -6,4 +6,4 @@
 # worker viable on free ARM infrastructure without compiling PyFES locally.
 pyfes==2026.5.2
 netCDF4>=1.7,<2
-timezonefinder>=8,<9
+timezonefinder>=8.3.0,<9
