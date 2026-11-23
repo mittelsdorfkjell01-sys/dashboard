@@ -102,7 +102,7 @@ export default function TodaySummary({ forecast }: { forecast: NormalizedForecas
             <span className="font-medium" style={{ color: hi == null ? undefined : tempColor(hi) }}>
               ↑ {hi == null ? "—" : `${tempValue(hi, units.temp)}°`}
             </span>
-            <span className="font-light" style={{ color: lo == null ? undefined : tempColor(lo), opacity: lo == null ? undefined : 0.85 }}>
+            <span className="swd-today-low font-normal" style={{ color: lo == null ? undefined : tempColor(lo) }}>
               ↓ {lo == null ? "—" : `${tempValue(lo, units.temp)}°`}
             </span>
           </span>

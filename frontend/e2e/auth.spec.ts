@@ -65,6 +65,21 @@ test("the tile keeps its top edge and grows smoothly for registration", async ({
   }
 });
 
+test("form text keeps real font sizes without transformed glyphs", async ({ page }) => {
+  await mockAccount(page, (route) => route.fulfill({ status: 400, headers: cors(route) }));
+  const email = page.locator('input[type="email"]');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/anmelden");
+  await expect(email).toHaveCSS("font-size", "16px");
+  await expect(email).toHaveCSS("transform", "none");
+  await expect(page.getByText("E-Mail", { exact: true })).toHaveCSS("font-size", "12px");
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(email).toHaveCSS("font-size", "12px");
+  await expect(email).toHaveCSS("transform", "none");
+});
+
 test("registration asks for email and the password twice, with one short consent", async ({ page }) => {
   await mockAccount(page, (route) => route.fulfill({ status: 400, headers: cors(route) }));
   await page.goto("/anmelden?mode=register");

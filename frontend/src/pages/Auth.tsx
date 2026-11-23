@@ -33,21 +33,18 @@ type Mode = "login" | "register";
  * field, nothing bold; Google and Apple under "oder weiter mit"; registration
  * is email + password twice (the display name is derived and editable later).
  */
-// 11px for the small print of this page only (2026-11-21, "alles noch
-// kleiner"): it is outside the design rules by the user's decision, and the
-// scale steps from 12px straight to 10px, which is too small to read.
-const SMALL = "text-[0.6875rem] leading-snug";
-// The field text reads 12px everywhere (2026-11-22). iOS zooms the whole page
-// into a focused field set below 16px, and index.css keeps every field at
-// 16px on touch screens for that reason — so the input here IS 16px and is
-// drawn at 75 %: 133⅓ % of the box, scaled down from its top-left corner.
-// The visible box (border, radius, focus edge) is the wrapper, which is not
-// scaled; glyph and eye button sit on it. Paddings are in the input's own,
-// unscaled pixels: pl-12 = 36px, pr-4 = 12px, pr-12 = 36px on screen.
+// Small print stays on the established 12px caption step. The medium weight
+// compensates for light text on the dark, photographic surface without adding
+// a shadow or glow.
+const SMALL = "text-caption font-medium leading-snug";
+// Inputs use their real rendered size: 16px on narrow/touch layouts prevents
+// iOS focus zoom, while the desktop breakpoint may use the compact 12px role.
+// Never scale text with a transform here; Chromium rasterizes transformed
+// glyphs into a compositing layer and they lose edge sharpness.
 const FIELD_BOX =
   "relative block h-9 w-full overflow-hidden rounded-card border border-white/[0.14] transition-colors hover:border-white/25 focus-within:outline focus-within:outline-2 focus-within:-outline-offset-1 focus-within:outline-white/70";
 const FIELD =
-  "absolute left-0 top-0 h-[133.334%] w-[133.334%] origin-top-left scale-75 border-0 bg-transparent pl-12 pr-4 text-body text-on-photo outline-none placeholder:text-white/40 focus-visible:!outline-none";
+  "h-full w-full border-0 bg-transparent pl-10 pr-3 text-body text-on-photo outline-none placeholder:text-on-photo-muted focus-visible:!outline-none sm:text-caption";
 const LABEL = `${SMALL} text-on-photo`;
 const LIGHT_LINK = "text-on-photo underline underline-offset-2 decoration-white/40 hover:decoration-white";
 const SUBMIT =
@@ -186,7 +183,7 @@ export default function Auth() {
         required
         aria-invalid={opts.invalid || undefined}
         aria-describedby={opts.describedBy}
-        className={`${FIELD} ${opts.toggle ? "!pr-12" : ""}`}
+        className={`${FIELD} ${opts.toggle ? "!pr-10" : ""}`}
       />
       {opts.toggle && passwordToggle}
     </div>

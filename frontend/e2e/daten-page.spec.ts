@@ -530,6 +530,10 @@ test("Daten-Seite zeigt Meteogramm und Ausblick", async ({ page }) => {
   await expect(page.getByText("Welle", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("Richt", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("group", { name: "Meteogramm — Zeitpunkt wählen" })).toBeVisible();
+  await expect(page.locator("[data-meteogram-row-label]").first()).toHaveCSS("font-size", "10px");
+  await expect(page.locator(".swd-meteogram-temperature").first()).toHaveCSS("font-size", "12px");
+  await expect(page.locator(".swd-today-low").first()).toHaveCSS("font-weight", "400");
+  await expect(page.locator(".swd-today-low").first()).toHaveCSS("opacity", "1");
   // The complete 10-day outlook renders through the last hourly day.
   await expect(page.getByText("SA 05.09", { exact: true })).toBeVisible();
   await expect(page.getByText("MO 14.09", { exact: true })).toBeVisible();
@@ -568,7 +572,12 @@ test("Die Daten-Seite hat keine eigene Karte mehr, sondern führt auf die Wetter
 
   await link.click();
   await expect(page).toHaveURL(/\/map\?/);
-  await expect(page.getByRole("group", { name: "Kartenmodus" })).toHaveCount(0);
+  // The redesigned /map always carries its mode pill (Single Surface Map
+  // Rule); "toggle=0" was the retired map's switch-off and is ignored. The old
+  // "no mode switch" check only passed when it ran before the lazy map mounted.
+  // What matters is that the spot's entry lands in wind mode.
+  await expect(page.getByRole("group", { name: "Kartenmodus" }).getByRole("button", { name: "Wind" }))
+    .toHaveAttribute("aria-pressed", "true");
 });
 
 test("Meteogramm zeigt Temperatur nur als Zahl ohne Balken", async ({ page }) => {
