@@ -152,4 +152,7 @@ test("mobile hero search disappears at the header boundary", async ({ page }, te
 
   await page.evaluate((scrollY) => window.scrollTo(0, scrollY), Math.max(0, sentinelBox!.y - 82));
   await expect(trigger).toBeHidden();
+  const wordmark = page.locator("[data-landing-wordmark-glider]");
+  await expect(wordmark).toHaveCSS("transform", "none");
+  await expect(wordmark.locator(".wordmark").first()).toHaveCSS("font-size", "19px");
 });

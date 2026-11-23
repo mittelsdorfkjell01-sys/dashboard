@@ -98,7 +98,7 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
           <Cell key={i}>
             {wave != null && (
               <>
-                <span className="mb-0.5 leading-none text-white" style={{ fontSize: 10 }}>{waveValue(wave, units.wave)}</span>
+                <span className="mb-0.5 text-micro font-medium leading-none text-white">{waveValue(wave, units.wave)}</span>
                 <span
                   className="w-[22px] rounded-[4px]"
                   style={{ height: Math.max(3, (wave / waveMax) * WAVE_H), background: "var(--sw-data-swell)" }}
@@ -118,7 +118,7 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
             <WeatherGlyph condition={s.weather_condition} isDay={s.is_day ?? true} size={GLYPH} />
             {s.precip != null && s.precip > 0 && (
               <span className="mt-0.5 flex flex-col items-center leading-none">
-                <span className="text-muted" style={{ fontSize: 9 }}>{s.precip.toFixed(1)}</span>
+                <span className="text-micro font-medium text-muted">{s.precip.toFixed(1)}</span>
                 <span
                   className="mt-0.5 w-[20px] rounded-[3px]"
                   style={{ height: Math.max(2, (s.precip / precipMax) * 14), background: "var(--sw-data-rain)" }}
@@ -138,8 +138,8 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
         <Cell key={i} justify="center">
           {s.air != null && (
             <span
-              className="swd-meteogram-temperature font-semibold tabular-nums leading-none"
-              style={{ color: tempColor(s.air), fontSize: 11 }}
+              className="swd-meteogram-temperature text-caption font-semibold tabular-nums leading-none"
+              style={{ color: tempColor(s.air) }}
             >
               {tempValue(s.air, units.temp)}°
             </span>
@@ -186,7 +186,7 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
           const show = s.localHour % 2 === 0;
           return (
             <Cell key={i}>
-              {show && <span className="tabular-nums text-muted" style={{ fontSize: 10 }}>{s.localTime.slice(0, 2)}</span>}
+              {show && <span className="text-micro font-medium tabular-nums text-muted">{s.localTime.slice(0, 2)}</span>}
             </Cell>
           );
         })}
@@ -339,7 +339,7 @@ function RowLabel({ icon, label, h, align = "center" }: { icon: React.ReactNode;
     <div className={`flex justify-center ${items}`} style={{ height: h }}>
       <span className="flex flex-col items-center gap-px leading-none">
         {icon}
-        <span className="uppercase text-muted" style={{ fontSize: 8, letterSpacing: "0.04em", lineHeight: 1 }}>{label}</span>
+        <span data-meteogram-row-label className="text-micro font-medium uppercase leading-none tracking-caps text-muted">{label}</span>
       </span>
     </div>
   );

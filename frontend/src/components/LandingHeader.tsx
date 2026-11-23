@@ -66,12 +66,11 @@ export default function LandingHeader({
   const desktop = useDesktopViewport();
   // The gliding wordmark is one element pinned to the header's left edge that
   // translates right to sit centred, then glides back on dock. `glideCenterX` is
-  // the exact distance to centre it — measured from the header row and the
-  // wordmark's own width, so it lands dead-centre on every viewport (mobile and
-  // desktop, max-width column included) instead of relying on a `50vw` formula
-  // that only holds when the content spans the whole width.
+  // the exact distance to centre the large hero size. A hidden, inaccessible
+  // measuring copy keeps that width available after the visible lockup switches
+  // to its real (unscaled) dock size.
   const rowRef = useRef<HTMLDivElement>(null);
-  const gliderRef = useRef<HTMLAnchorElement>(null);
+  const heroWordmarkMeasureRef = useRef<HTMLSpanElement>(null);
   const [glideCenterX, setGlideCenterX] = useState(0);
   // The transform carries an 820ms transition for the dock/undock glide. But the
   // measured centre also updates once the webfont finishes loading, and we must
@@ -84,11 +83,9 @@ export default function LandingHeader({
     if (!sticky) return;
     const measure = () => {
       const row = rowRef.current;
-      const glider = gliderRef.current;
-      if (!row || !glider) return;
-      // offsetWidth ignores the CSS transform, so the base (scale 1) width is
-      // read correctly even while the wordmark is docked and scaled down.
-      setGlideCenterX(Math.max(0, (row.clientWidth - glider.offsetWidth) / 2));
+      const heroWordmark = heroWordmarkMeasureRef.current;
+      if (!row || !heroWordmark) return;
+      setGlideCenterX(Math.max(0, (row.clientWidth - heroWordmark.offsetWidth) / 2));
     };
     measure();
     window.addEventListener("resize", measure);
@@ -206,33 +203,35 @@ export default function LandingHeader({
           ref={rowRef}
           className="pointer-events-auto relative grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 sm:gap-4"
         >
-          {/* ONE wordmark that glides from centred + large (hero top) to docked
-              left + small when `docked` flips — a single transform-only motion
-              (translate + scale) over a fixed duration, triggered at one scroll
-              point (not coupled to scroll distance), so it plays the same whether
-              you scroll slowly or flick fast. This is now the *only* wordmark on
-              the sticky landing on both mobile and desktop (desktop dropped the
-              old cross-fade between two lockups), so the animation is identical.
-              `glideCenterX` (measured) is the translate that centres it; the dock
-              scale 0.54 takes xl → ≈18px on mobile and ≈31px (≈ md) on desktop. */}
+          {/* The visible wordmark glides from the large hero role to a real
+              responsive dock role. Only horizontal movement is transformed;
+              the finished lockup has transform:none and real font sizes, so its
+              glyphs stay on the browser's sharp text-rendering path. */}
           {sticky && (
-            <Link
-              ref={gliderRef}
-              to="/"
-              aria-label="surfwind data"
-              className={`pointer-events-auto absolute left-0 top-1/2 z-10 flex origin-left items-center whitespace-nowrap leading-none will-change-transform before:absolute before:inset-x-0 before:-inset-y-4 before:content-[''] ${heroInk}`}
-              style={{
-                transform: docked
-                  ? "translateY(-50%) scale(0.54)"
-                  : `translateY(-50%) translateX(${glideCenterX}px) scale(1)`,
-                // Deliberately slow + eased so the glide reads as a calm settle
-                // regardless of scroll speed (it is time-based, not scroll-linked).
-                // Off until the first measurement settles (see `glideReady`).
-                transition: glideReady ? "transform 820ms cubic-bezier(0.22, 1, 0.36, 1)" : "none",
-              }}
-            >
-              <Wordmark size="xl" />
-            </Link>
+            <>
+              <span
+                ref={heroWordmarkMeasureRef}
+                aria-hidden
+                className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap"
+              >
+                <Wordmark size="xl" />
+              </span>
+              <Link
+                to="/"
+                aria-label="surfwind data"
+                data-landing-wordmark-glider
+                className={`pointer-events-auto absolute inset-y-0 left-0 z-10 flex items-center whitespace-nowrap leading-none before:absolute before:inset-x-0 before:-inset-y-4 before:content-[''] ${heroInk}`}
+                style={{
+                  transform: docked ? "none" : `translateX(${glideCenterX}px)`,
+                  // Deliberately slow + eased so the glide reads as a calm settle
+                  // regardless of scroll speed (it is time-based, not scroll-linked).
+                  // Off until the first measurement settles (see `glideReady`).
+                  transition: glideReady ? "transform 820ms cubic-bezier(0.22, 1, 0.36, 1)" : "none",
+                }}
+              >
+                <Wordmark size={docked ? "dock" : "xl"} animateSize={glideReady} />
+              </Link>
+            </>
           )}
 
           <div className="min-w-0 justify-self-start">
