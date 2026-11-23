@@ -48,10 +48,13 @@ export function ErrorBanner({
   );
 }
 
-/** A neutral empty state on the alternating band surface. */
+/** A neutral empty state on the alternating band surface. The message is the
+ *  content here, so it takes `ink-soft`: `muted` on `band` measured 4.45:1,
+ *  under the 4.5:1 floor for 14px text (axe, 2026-11-23). One corner radius,
+ *  as everywhere (was rounded-2xl). */
 export function EmptyState({ message }: { message: string }) {
   return (
-    <div className="rounded-2xl bg-band px-5 py-10 text-center text-ui text-muted">
+    <div className="rounded-card bg-band px-5 py-10 text-center text-ui text-ink-soft">
       {message}
     </div>
   );

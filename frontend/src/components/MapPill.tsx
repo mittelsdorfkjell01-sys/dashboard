@@ -8,9 +8,11 @@ import { MapIcon } from "../lib/icons";
  * of three hand-copied links, so the fixes below hold everywhere:
  *
  *  - 44px tall (`min-h-11`): it was 37px, under the touch-target floor.
- *  - It steps aside once the footer scrolls into view. Pinned at `bottom-6` it
- *    otherwise sat on the last footer row (Impressum / Datenschutz) at the end
- *    of every page, where it covered links that have no other way in.
+ *  - It rides above the footer once the footer scrolls into view. Pinned at
+ *    `bottom-6` it otherwise sat on the last footer row (Impressum /
+ *    Datenschutz), where it covered links that have no other way in. Until
+ *    2026-11-23 it faded out there instead, which on a short page (a few
+ *    results, footer in view from the start) left no way to the map at all.
  *
  * `className` carries the per-page differences (e.g. `lg:hidden` where a
  * desktop map is already on screen, or the ink colour on the dark Daten page).
@@ -29,15 +31,33 @@ export default function MapPill({
   className?: string;
   ground?: "page" | "band";
 }) {
-  const [footerVisible, setFooterVisible] = useState(false);
+  // How far the footer reaches into the viewport. The pill rides that far
+  // above its resting place instead of disappearing.
+  const [lift, setLift] = useState(0);
 
   useEffect(() => {
-    if (!("IntersectionObserver" in window)) return;
     const footer = document.querySelector("footer");
     if (!footer) return;
-    const observer = new IntersectionObserver(([entry]) => setFooterVisible(entry.isIntersecting));
-    observer.observe(footer);
-    return () => observer.disconnect();
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const reach = window.innerHeight - footer.getBoundingClientRect().top;
+      setLift(reach > 0 ? Math.round(reach) : 0);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(measure);
+    };
+    measure();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    const observer = "ResizeObserver" in window ? new ResizeObserver(schedule) : null;
+    observer?.observe(document.body);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      observer?.disconnect();
+    };
   }, []);
 
   return (
@@ -45,11 +65,10 @@ export default function MapPill({
       to={to}
       state={state}
       aria-label="Karte öffnen"
-      aria-hidden={footerVisible || undefined}
-      tabIndex={footerVisible ? -1 : undefined}
-      className={`fixed bottom-6 left-1/2 z-sticky flex min-h-11 -translate-x-1/2 items-center gap-1.5 rounded-card px-4 py-2 text-ui font-normal shadow-float transition-opacity duration-base ${
+      style={{ bottom: `calc(1.5rem + ${lift}px)` }}
+      className={`fixed left-1/2 z-sticky flex min-h-11 -translate-x-1/2 items-center gap-1.5 rounded-card px-4 py-2 text-ui font-normal shadow-float ${
         ground === "band" ? "bg-band" : "bg-page"
-      } ${footerVisible ? "pointer-events-none opacity-0" : "opacity-100"} ${className}`}
+      } ${className}`}
     >
       Karte <MapIcon className="text-body" />
     </Link>

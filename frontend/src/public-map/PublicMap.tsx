@@ -506,7 +506,17 @@ export default function PublicMap() {
   return (
     <main data-lenis-prevent className={`swd-pm ${theme === "dark" ? "is-dark" : "sw-theme-light"} is-${mode}${weather ? " has-tile" : ""}${barOpen ? " has-bar" : ""}`} aria-labelledby="swd-pm-title">
       <h1 id="swd-pm-title" className="sr-only">Karte: Spots, Wind und Wellen</h1>
-      <div ref={groundRef} className="swd-pm-ground" />
+      {/* The map surface is named per mode and says how to use it without a
+          pointer (carried over from the retired MapView, main 2d9d172f). */}
+      <p id="public-map-help" className="sr-only">
+        Pfeiltasten verschieben die Karte, Plus und Minus zoomen. Die Spots sind per Tastatur erreichbar und öffnen eine Leiste mit dem Weg zum Spot.
+      </p>
+      <div
+        ref={groundRef}
+        className="swd-pm-ground"
+        aria-label={mode === "spots" ? "Surfspot-Karte" : mode === "waves" ? "Wellenkarte" : "Windkarte"}
+        aria-describedby="public-map-help"
+      />
       <div ref={namesRef} className="swd-pm-names" aria-hidden="true" />
       <div ref={maskRef} className="swd-pm-mask" aria-hidden="true" />
 

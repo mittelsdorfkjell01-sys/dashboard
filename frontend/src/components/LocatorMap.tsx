@@ -465,8 +465,11 @@ export default function LocatorMap({
     const map = mapRef.current;
     if (!map || !ready) return;
     setInteractive(map, active);
-    if (active) map.getCanvas().focus({ preventScroll: true });
-  }, [active, ready]);
+    // Fullscreen hands focus to its close button (effect below). When the map
+    // finished loading only after the tap — the production build, 2026-11-23 —
+    // this used to pull focus back onto the canvas.
+    if (active && !fullscreen) map.getCanvas().focus({ preventScroll: true });
+  }, [active, fullscreen, ready]);
 
   // Desktop only: while activated inline, a plain click on the map (not on a
   // pin, not a drag) locks it again, as before.
