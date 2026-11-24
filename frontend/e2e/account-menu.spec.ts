@@ -223,8 +223,13 @@ test("the sign-in page and the footer still link the Impressum", async ({ page }
 test("the switch thumb runs on the switch curve and stretches under the press", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: OPEN }).first().click();
+  // The menu opens as a circle out of its button (300ms); taps only land
+  // inside the circle, so press once it has fully opened.
+  await expect(page.getByRole("dialog")).toHaveAttribute("data-shown", "true");
+  await page.waitForTimeout(350);
   const row = page.getByRole("dialog").getByRole("switch").first();
-  const thumb = row.locator("span > span").last();
+  const thumb = row.locator('[data-part="switch-thumb"]');
+  const fill = row.locator('[data-part="switch-fill"]');
 
   const easing = await thumb.evaluate((el) => getComputedStyle(el).transitionTimingFunction);
   expect(easing).toContain("1.6"); // the overshoot of ease-switch
@@ -243,4 +248,7 @@ test("the switch thumb runs on the switch curve and stretches under the press", 
   const travelled = await thumb.evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).m41);
   expect(travelled).toBeGreaterThan(20);
   expect(await width()).toBeCloseTo(resting, 0);
+  // The brand blue has filled the track from the left behind the thumb.
+  const fillScale = await fill.evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).a);
+  expect(fillScale).toBeCloseTo(1, 2);
 });

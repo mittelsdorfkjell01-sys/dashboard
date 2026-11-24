@@ -45,7 +45,11 @@ const SPORT_OPTIONS: { value: string; Icon: typeof SurfIcon }[] = [
 // few frames" feel). A CSS `transition: transform` runs on the compositor
 // instead, so the slide stays smooth regardless of main-thread load. The drag
 // itself is a few pointer handlers below.
-const SHEET_SLIDE_MS = 460;
+// Opening takes the house's slow step; closing is quicker so the way back
+// never holds anyone up (was 460ms both ways until 2026-11-24 and felt sluggish).
+// The three tiles follow the slide in one after another (`swd-stagger-item`).
+const SHEET_OPEN_MS = 300;
+const SHEET_CLOSE_MS = 200;
 const SHEET_EASE_CSS = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 /** A place suggestion, flattened for the mobile single-column list. */
@@ -107,7 +111,7 @@ export default function MobileSearchSheet({
   // action bar steps aside and the results get the little height there is.
   const keyboardOpen = keyboardLikelyOpen(visualBox);
 
-  // Native-CSS slide state (see SHEET_SLIDE_MS). `mounted` keeps the node in the
+  // Native-CSS slide state (see SHEET_OPEN_MS). `mounted` keeps the node in the
   // DOM through the close animation; `slidIn` toggles the transform a frame
   // after mount so the transition actually runs; `dragging` cuts the transition
   // while a finger is driving the sheet directly.
@@ -190,7 +194,7 @@ export default function MobileSearchSheet({
     const timer = window.setTimeout(() => {
       setMounted(false);
       if (previous?.isConnected) previous.focus({ preventScroll: true });
-    }, reduce ? 160 : SHEET_SLIDE_MS);
+    }, reduce ? 160 : SHEET_CLOSE_MS);
     return () => window.clearTimeout(timer);
   }, [open, reduce]);
 
@@ -333,8 +337,10 @@ export default function MobileSearchSheet({
   const moveRaf = useRef(0);
   const pendingY = useRef(0);
 
-  const transformTransition = () =>
-    reduce ? "opacity 150ms ease-brand" : `transform ${SHEET_SLIDE_MS}ms ${SHEET_EASE_CSS}`;
+  const transformTransition = (closing: boolean) =>
+    reduce
+      ? `opacity 150ms ${SHEET_EASE_CSS}`
+      : `transform ${closing ? SHEET_CLOSE_MS : SHEET_OPEN_MS}ms ${SHEET_EASE_CSS}`;
 
   const beginDrag = (clientY: number, el: HTMLElement, pointerId: number) => {
     dragRef.current = { startY: clientY, lastY: clientY, lastT: performance.now(), vy: 0, active: true };
@@ -379,7 +385,7 @@ export default function MobileSearchSheet({
       // Re-enable the transition and give it an explicit target so it animates
       // from the finger position — snap back to the open position, or continue
       // down and out. (For reduced motion, transform is instant.)
-      el.style.transition = transformTransition();
+      el.style.transition = transformTransition(closing);
       el.style.transform = reduce ? "" : closing ? "translateY(100%)" : "translateY(0)";
     }
     if (closing) onClose();
@@ -427,12 +433,12 @@ export default function MobileSearchSheet({
   const sheetStyle: React.CSSProperties = reduce
     ? {
         willChange: "opacity",
-        transition: dragRef.current.active ? "none" : "opacity 150ms ease-brand",
+        transition: dragRef.current.active ? "none" : transformTransition(!slidIn),
         opacity: slidIn ? 1 : 0,
       }
     : {
         willChange: "transform",
-        transition: dragRef.current.active ? "none" : `transform ${SHEET_SLIDE_MS}ms ${SHEET_EASE_CSS}`,
+        transition: dragRef.current.active ? "none" : transformTransition(!slidIn),
         transform: slidIn ? "translateY(0)" : "translateY(100%)",
       };
 
@@ -444,6 +450,7 @@ export default function MobileSearchSheet({
       role="dialog"
       aria-modal="true"
       aria-label="Suche"
+      data-shown={slidIn}
       tabIndex={-1}
       style={visualBox ? { ...sheetStyle, top: visualBox.top, height: visualBox.height } : sheetStyle}
     >
@@ -503,7 +510,7 @@ export default function MobileSearchSheet({
           >
             <div className="mx-auto flex w-full max-w-[520px] flex-col gap-3">
               {/* Wohin? */}
-              <div id="msheet-where">
+              <div id="msheet-where" className="swd-stagger-item" style={{ "--i": 0 } as React.CSSProperties}>
               <Section
                 label="Wohin?"
                 value={whereValue}
@@ -586,7 +593,7 @@ export default function MobileSearchSheet({
                   Omitted entirely for a place-only search (the wind map). */}
               {!whereOnly && (
               <>
-              <div id="msheet-when">
+              <div id="msheet-when" className="swd-stagger-item" style={{ "--i": 1 } as React.CSSProperties}>
               <Section
                 label="Wann?"
                 value={whenLabel(val.when)}
@@ -608,7 +615,7 @@ export default function MobileSearchSheet({
               </div>
 
               {/* Welche Sportart? */}
-              <div id="msheet-which">
+              <div id="msheet-which" className="swd-stagger-item" style={{ "--i": 2 } as React.CSSProperties}>
               <Section
                 label="Welche Sportart?"
                 value={val.which.map(sportLabel).join(", ")}

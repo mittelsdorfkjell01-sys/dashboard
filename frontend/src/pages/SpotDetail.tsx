@@ -39,23 +39,18 @@ export default function SpotDetail() {
   const activeTab = location.pathname.endsWith("/daten") ? "daten" : "info";
   const reduceMotion = useReducedMotion();
 
-  // Direction for the tab-content swap: which side the new content slides in
-  // from. Comparing against the previous tab index (kept in a ref) each
-  // render is the standard way to derive this without lagging a render
-  // behind, the way computing it in an effect would.
-  const TAB_ORDER = ["info", "daten"];
-  const tabIndex = TAB_ORDER.indexOf(activeTab);
-  const prevTabIndexRef = useRef(tabIndex);
-  const tabDirection = tabIndex - prevTabIndexRef.current >= 0 ? 1 : -1;
-  prevTabIndexRef.current = tabIndex;
-
-  // Old content slides 12px toward the side it came from and fades out; new
-  // content slides in from the side it's headed toward — direction is what
-  // makes the swap read as "moving" instead of every switch looking the same.
+  // Info ↔ Daten (chosen 2026-11-24, "Untergrund blendet mit"): the light
+  // and the dark ground cross-fade over 300ms behind the content (see the
+  // wrapper below), the old content fades out in 100ms and the new one fades
+  // in over 200ms after it. Until then the content slid 12px and the ground
+  // jumped from light to dark in one frame — the jump was all anyone saw.
+  const HOUSE = [0.22, 1, 0.36, 1] as const;
   const tabContentVariants = {
-    enter: (dir: number) => (reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: dir >= 0 ? 12 : -12 }),
-    center: { opacity: 1, x: 0 },
-    exit: (dir: number) => (reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: dir >= 0 ? -12 : 12 }),
+    enter: reduceMotion ? { opacity: 1 } : { opacity: 0 },
+    center: reduceMotion
+      ? { opacity: 1 }
+      : { opacity: 1, transition: { duration: 0.2, delay: 0.1, ease: HOUSE } },
+    exit: reduceMotion ? { opacity: 1 } : { opacity: 0, transition: { duration: 0.1, ease: HOUSE } },
   };
 
   const { data: spot, loading, error, errorStatus, reload } = useSpot(spotName);
@@ -226,7 +221,10 @@ export default function SpotDetail() {
         {/* Rendered at native scale at every width. The page used to shrink its
             desktop body with CSS zoom (0.85); the type scale and container
             tokens now size it directly, in whole pixels. */}
-        <div className="relative [overflow-anchor:none]">
+        <div
+          className="relative [overflow-anchor:none] motion-safe:transition-colors motion-safe:duration-slow"
+          style={{ backgroundColor: activeTab === "daten" ? "var(--sw-daten-page)" : "var(--sw-page)" }}
+        >
         {/* On the Daten tab the shared tab strip is scoped dark so it meets the
             dark instrument page below with no light seam (Figma Frame 67). */}
         {tabs.length > 0 && (
@@ -237,18 +235,15 @@ export default function SpotDetail() {
 
         <AnimatePresence
           initial={false}
-          custom={tabDirection}
           mode="popLayout"
         >
           {activeTab === "info" && (
             <motion.div
               key="info"
-              custom={tabDirection}
               variants={tabContentVariants}
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: reduceMotion ? 0 : 0.22, ease: "easeOut" }}
             >
             {/* Text / Galerie-Kachel / Facilities+Kommentar — drei Spalten */}
             <SectionBand tone="page" pad="md" width="spotBody">
@@ -443,12 +438,10 @@ export default function SpotDetail() {
           {activeTab === "daten" && (
             <motion.div
               key="daten"
-              custom={tabDirection}
               variants={tabContentVariants}
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: reduceMotion ? 0 : 0.22, ease: "easeOut" }}
             >
             <DatenPage
               spot={spot}

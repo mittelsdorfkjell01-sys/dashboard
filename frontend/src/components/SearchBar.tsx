@@ -33,9 +33,15 @@ const SPORT_OPTIONS: { value: string; Icon: typeof SurfIcon }[] = [
   { value: "wing", Icon: WingIcon },
 ];
 
-// One shared, non-bouncy spring gives the shell and active segment the same
-// cadence. Panels keep their existing widths and alignment.
-const SPRING = { type: "spring" as const, stiffness: 360, damping: 34, mass: 0.75 };
+// Open/close choreography (chosen 2026-11-24, "Pill fährt aus"): the header
+// pill widens into the full search bar on the house curve in 200ms, then the
+// panel underneath drops in 80ms later. Closing is quicker (150ms). Until then
+// a spring plus 70–140ms fades made the panel pop rather than move.
+const HOUSE_EASE = [0.22, 1, 0.36, 1] as const;
+const SHELL_GROW = { duration: 0.2, ease: HOUSE_EASE };
+const PANEL_ENTER = { duration: 0.2, delay: 0.08, ease: HOUSE_EASE };
+// Switching between Wohin/Wann/Sportart inside the open search stays a quick
+// cross-fade — it answers a click on a segment, not an open.
 const PANEL_TRANSITION = { duration: 0.07, ease: [0.16, 1, 0.3, 1] as const };
 const PANEL_HEIGHT = 350;
 // Floor for the panel on very short viewports (a phone held sideways with the
@@ -306,6 +312,7 @@ export default function SearchBar({
         <motion.button
           ref={pillTriggerRef}
           layoutId={reduce ? undefined : "search-shell"}
+          transition={reduce ? undefined : SHELL_GROW}
           type="button"
           onClick={() => openExpanded()}
           className={`flex min-h-11 max-w-full items-center gap-2.5 rounded-card border border-line bg-surface py-1 pl-4 pr-1 text-ui font-medium text-ink shadow-card transition-shadow hover:shadow-float ${
@@ -358,7 +365,7 @@ export default function SearchBar({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: reduce ? 0.07 : expanded ? 0.14 : 0.09, ease: "easeOut" }}
+              transition={{ duration: reduce ? 0.07 : expanded ? 0.2 : 0.15, ease: HOUSE_EASE }}
               onClick={() => collapse()}
             >
               <motion.div
@@ -380,10 +387,10 @@ export default function SearchBar({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={
                   variant === "hero" && !reduce
-                    ? { opacity: 0, scale: 0.99, transition: { duration: 0.09, ease: "easeOut" } }
-                    : { opacity: 0, transition: { duration: 0.09, ease: "easeOut" } }
+                    ? { opacity: 0, scale: 0.99, transition: { duration: 0.15, ease: HOUSE_EASE } }
+                    : { opacity: 0, transition: { duration: 0.15, ease: HOUSE_EASE } }
                 }
-                transition={reduce ? { duration: 0.12 } : SPRING}
+                transition={reduce ? { duration: 0.12 } : SHELL_GROW}
                 onAnimationComplete={() => {
                   if (expanded) setShellReady(true);
                 }}
@@ -394,6 +401,7 @@ export default function SearchBar({
                       the header pill instead of fading in mid-page. */}
                   <motion.div
                     layoutId={variant === "pill" && !reduce ? "search-shell" : undefined}
+                    transition={reduce ? undefined : SHELL_GROW}
                     className="flex h-14 items-stretch gap-1 rounded-card bg-surface p-1 shadow-float"
                   >
                     {/* Wohin? — the Tippleiste lives in the bar. */}
@@ -467,6 +475,15 @@ export default function SearchBar({
                     </button>
                   </motion.div>
 
+                  {/* The panel area drops in once, just after the bar has grown.
+                      Its own transform makes it the containing block for the
+                      panel below, hence the panel's top-0 rather than top-full. */}
+                  <motion.div
+                    className="absolute inset-x-0 top-full"
+                    initial={reduce ? false : { opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={PANEL_ENTER}
+                  >
                   {/* Incoming and outgoing panels cross-fade concurrently with
                       one shared timing, so every switch has the same cadence. */}
                   <AnimatePresence initial={false}>
@@ -476,7 +493,7 @@ export default function SearchBar({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: reduce ? 0 : -2 }}
                       transition={reduce ? { duration: 0.05, ease: "easeOut" } : PANEL_TRANSITION}
-                      className={`absolute top-full mt-3 ${
+                      className={`absolute top-0 mt-3 ${
                         open === "when"
                           ? "inset-x-0"
                           : open === "where"
@@ -540,6 +557,7 @@ export default function SearchBar({
                       </div>
                     </motion.div>
                   </AnimatePresence>
+                  </motion.div>
                 </div>
               </motion.div>
             </motion.div>

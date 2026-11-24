@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { heroManifest } from "../heroManifest";
 import { hostedSrcSet, hotlinkSrcSet, objectPosition } from "../lib/heroSource";
+import { useImageReveal } from "../lib/useImageReveal";
 
 /** Below this breakpoint the mobile focal (if set) applies. Matches Tailwind's
  *  `sm` — the same break at which the region hero switches to a portrait crop
@@ -98,6 +99,8 @@ export default function HeroImage({
   useEffect(() => setImageAttempt("primary"), [src, fallbackSrc]);
   const useFallback = imageAttempt === "fallback" && Boolean(fallbackSrc);
   const displayedSrc = useFallback ? fallbackSrc! : src;
+  const reveal = useImageReveal(displayedSrc);
+  const imgClass = `swd-img-reveal ${className ?? ""}`;
   const activeFocal = isMobile && focalMobile ? focalMobile : focal;
   const entry = !useFallback && src.startsWith("/") ? heroManifest[keyFromSrc(src)] : undefined;
   const safeRotation = Math.max(-5, Math.min(5, rotation));
@@ -141,7 +144,7 @@ export default function HeroImage({
         loading={priority ? "eager" : "lazy"}
         {...fetchPriorityAttribute(priority)}
         decoding="async"
-        className={className}
+        className={imgClass} {...reveal}
         style={style}
         onError={onError}
       />
@@ -149,7 +152,7 @@ export default function HeroImage({
   }
 
   if (!entry) {
-    return <img src={displayedSrc} alt={alt} loading={priority ? "eager" : "lazy"} {...fetchPriorityAttribute(priority)} decoding="async" className={className} style={style} onError={onError} />;
+    return <img src={displayedSrc} alt={alt} loading={priority ? "eager" : "lazy"} {...fetchPriorityAttribute(priority)} decoding="async" className={imgClass} {...reveal} style={style} onError={onError} />;
   }
 
   const key = keyFromSrc(src);
@@ -163,7 +166,7 @@ export default function HeroImage({
           srcSet={entry.widths.map((w) => `/${key}-${w}.${fmt} ${w}w`).join(", ")}
         />
       ))}
-      <img src={entry.fallback} alt={alt} loading={priority ? "eager" : "lazy"} {...fetchPriorityAttribute(priority)} decoding="async" className={className} style={style} onError={onError} />
+      <img src={entry.fallback} alt={alt} loading={priority ? "eager" : "lazy"} {...fetchPriorityAttribute(priority)} decoding="async" className={imgClass} {...reveal} style={style} onError={onError} />
     </picture>
   );
 }

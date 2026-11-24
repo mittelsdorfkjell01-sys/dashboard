@@ -323,7 +323,7 @@ Konturen sind fein und neutral. Dicke Rahmen, doppelte Einfassungen und dekorati
 - **Outline:** neutrale Hairline, transparente Flaeche und ruhiger Hover auf `band`; fuer klar abgegrenzte sekundäre Aktionen.
 - **Filled Exception:** nur fuer echte Abschlussaktionen wie Formular absenden, Dialog bestaetigen oder einen blockierten Vorgang erneut starten. Die Flaeche verwendet Ink statt Akzentfarbe und darf nie mehrere gleichrangige Buttons in einer Gruppe erzeugen.
 - **Danger:** Kontur und Text aus den Danger-Tokens; keine vollflächig rote Standardaktion.
-- **State:** `150ms` fuer Farbe/Opacity, Press-in bis `0.98`; unter `prefers-reduced-motion` keine Skalierung.
+- **State:** `150ms` fuer Farbe/Opacity, Press-in bis `0.97` (runde Aktionsknoepfe) bzw. `0.98` (breite Flaechen); unter `prefers-reduced-motion` keine Skalierung.
 
 **The No Fat Button Rule.** Navigation, Discovery und normale Sekundaeraktionen erscheinen als Text oder Kontur, nicht als grosse gefuellte Flaeche.
 
@@ -378,7 +378,28 @@ Datenmodule verwenden `figures`, tabellarische Ziffern, kurze Versal-Labels und 
 
 Die Hauskurve ist `cubic-bezier(0.22, 1, 0.36, 1)` mit `150ms`, `200ms` und `300ms` fuer Zustandswechsel. Redaktionelle Sektionen duerfen einmalig sanft um maximal `24px` einblenden; Hero-Parallax bleibt langsam und wird auf Touchgeraeten sowie bei reduzierter Bewegung deaktiviert. Motion erklaert Zustand oder Tiefe und konkurriert nie mit dem Bild.
 
-Eine einzige Ausnahme von der Hauskurve: der Schalter-Thumb in `ui/Switch` laeuft auf `ease-switch` (`cubic-bezier(0.32, 1.6, 0.55, 1)`) und schwingt dabei leicht ueber, so wie ein physischer Kippschalter einrastet; gedrueckt dehnt er sich auf die Seite, zu der er wandern wuerde. Das gilt nur fuer diesen einen Baustein — Panels, Sheets und Zustandswechsel bleiben auf der Hauskurve. (Vorher: ausnahmslos Hauskurve, lineare Thumb-Fahrt; geaendert am 2026-11-15, weil der Schalter als einziges Bedienelement direkt auf den Druck antwortet.)
+Eine einzige Ausnahme von der Hauskurve: der Schalter-Thumb in `ui/Switch` laeuft auf `ease-switch` (`cubic-bezier(0.32, 1.6, 0.55, 1)`) und schwingt dabei leicht ueber, so wie ein physischer Kippschalter einrastet; gedrueckt dehnt er sich auf die Seite, zu der er wandern wuerde. Das gilt nur fuer diesen einen Baustein — Panels, Sheets und Zustandswechsel bleiben auf der Hauskurve. (Vorher: ausnahmslos Hauskurve, lineare Thumb-Fahrt; geaendert am 2026-11-15, weil der Schalter als einziges Bedienelement direkt auf den Druck antwortet.) Seit 2026-11-24 rastet der Thumb in `240ms` ein, das Blau fuellt die Spur dabei von links auf der Hauskurve nach, und das Symbol im Thumb uebergibt: Icons drehen sich heraus und herein (Sonne ↔ Mond), Text gleitet vertikal (DE ↔ EN).
+
+Feste Bewegungsmuster seit 2026-11-24 — Neues nimmt eines davon, statt ein eigenes zu erfinden:
+
+- **Schliessen ist kuerzer als Oeffnen** (`300ms` → `200ms`, `200ms` → `150ms`), damit der Rueckweg nie bremst.
+- **Staffel** (`.swd-stagger-item`): Die Elemente eines gerade geoeffneten Panels kommen nacheinander, `8px` von unten, je `+40ms`, hoechstens etwa sechs. Beispiel: die drei Kacheln der mobilen Suche.
+- **Kreis aus dem Ausloeser** (`.swd-reveal`): Das Burger-Menue oeffnet sich als Kreis aus dem Knopf und schliesst in ihn zurueck. Der Radius reicht genau bis zur fernsten Ecke.
+- **Gedehnte Flaeche** (`useStretchIndicator`): Die aktive Flaeche eines Segment-Umschalters gleitet zur neuen Option, die vordere Kante zuerst, die hintere `70ms` spaeter.
+- **Wachsende Suche**: Am PC faehrt die Such-Pill in `200ms` zur vollen Leiste aus, das Panel faellt `80ms` spaeter `6px` herein. Vorher: `70–140ms` Einblenden, das eher sprang als sich bewegte.
+- **Druck** auf runde Aktionsknoepfe: weich in `150ms` auf `0.97`, Fuellung blendet ueber. Ohne Transform-Uebergang sprang der Knopf.
+
+- **Fall-In** (`.swd-drop`): kleine Panels und Hinweise unter ihrem Ausloeser (Sortieren-Dropdown, Gueltigkeit der Vorhersage) blenden ein und setzen sich `6px` nach unten.
+- **Dialoge** (`ui/Modal`): Die Karte waechst von `0.96`, der Scrim blendet.
+- **Info ↔ Daten**: Heller und dunkler Untergrund blenden in `300ms` ineinander, der alte Inhalt geht in `100ms`, der neue kommt in `200ms`. Vorher sprang der Grund in einem Frame von Hell auf Dunkel.
+- **Fotos** (`useImageReveal`): blenden nach dem Laden ein und setzen sich von `1.04` auf `1`. Bilder aus dem Cache erscheinen sofort.
+- **Vom Rand herein**: Der Zurueck-Pfeil gleitet von links herein, die Karte-Pill steigt einmal vom unteren Rand auf.
+- **Checkbox/Radio** sind gezeichnet statt nativ eingefaerbt: Das echte Input bleibt das Bedienelement, die blaue Flaeche waechst aus der Mitte, Haken oder Punkt folgen `90ms` spaeter. Ausnahme vom Radius: Die Box hat `6px`, weil `14px` sie bei `20px` Groesse zum Kreis machen wuerde.
+- Der gewaehlte Tag in der Tagesuebersicht traegt einen Rahmen, der sich wie die Segment-Flaeche zum naechsten Tag dehnt. Vorher hatte der gewaehlte Tag gar keine sichtbare Markierung.
+
+- **Ansichtswechsel** (`.swd-view-in`): Zwei Lesarten derselben Daten (Windmonate: Raster ↔ Kurve) wechseln ueber den Segment-Umschalter, die neue Ansicht blendet `4px` von unten ein.
+
+Unter `prefers-reduced-motion` bleibt von allen Mustern nur das Ueberblenden.
 
 ## Do's and Don'ts
 

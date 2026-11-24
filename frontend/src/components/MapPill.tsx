@@ -66,7 +66,9 @@ export default function MapPill({
       state={state}
       aria-label="Karte öffnen"
       style={{ bottom: `calc(1.5rem + ${lift}px)` }}
-      className={`fixed left-1/2 z-sticky flex min-h-11 -translate-x-1/2 items-center gap-1.5 rounded-card px-4 py-2 text-ui font-normal shadow-float ${
+      // Centred by margin, not translate(-50%) — no half-pixel offset, so the
+      // label stays sharp. Rises in from the bottom edge once (.swd-pill-rise).
+      className={`swd-pill-rise fixed inset-x-0 z-sticky mx-auto flex min-h-11 w-max items-center gap-1.5 rounded-card px-4 py-2 text-ui font-normal shadow-float ${
         ground === "band" ? "bg-band" : "bg-page"
       } ${className}`}
     >

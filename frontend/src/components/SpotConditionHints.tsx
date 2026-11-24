@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { usePresence } from "../lib/usePresence";
 import type { ForecastSummaryRead } from "../lib/api";
 import type { Spot } from "../lib/types";
 import { InfoIcon, SafetyIcon } from "../lib/icons";
@@ -39,6 +40,7 @@ export default function SpotConditionHints({
   // Declared before the early return below: hooks must run in the same order
   // on every render, and this component bails out when it has nothing to show.
   const [timingOpen, setTimingOpen] = useState(false);
+  const validity = usePresence(timingOpen, 150);
   const hints = buildSpotConditionHints(spot, forecast, units.temp);
   const cells = buildSpotFactCells(spot, forecast, units.temp);
 
@@ -119,10 +121,12 @@ export default function SpotConditionHints({
               {timingOpen ? "Gültigkeit der Vorhersage ausblenden" : "Gültigkeit der Vorhersage anzeigen"}
             </span>
           </button>
-          {timingOpen && (
+          {validity.mounted && (
             <p
               id="spot-forecast-validity"
-              className="text-right text-micro leading-snug text-muted"
+              data-shown={validity.shown}
+              // Fades in and settles 4px down (chosen 2026-11-24); see .swd-drop.
+              className="swd-drop text-right text-micro leading-snug text-muted"
             >
               Vorhersage · {timing}
             </p>

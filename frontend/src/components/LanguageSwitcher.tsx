@@ -38,11 +38,11 @@ export default function LanguageSwitcher({ variant = "sheet" }: { variant?: "she
       <span>{t("language.label")}</span>
       <SwitchTrack
         checked={english}
-        icon={
-          <span className="text-[0.625rem] font-semibold leading-none tracking-caps">
-            {active.toUpperCase()}
-          </span>
-        }
+        icons={{
+          motion: "slide",
+          off: <span className="text-[0.625rem] font-semibold leading-none tracking-caps">DE</span>,
+          on: <span className="text-[0.625rem] font-semibold leading-none tracking-caps">EN</span>,
+        }}
       />
     </button>
   );

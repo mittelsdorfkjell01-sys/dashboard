@@ -51,7 +51,10 @@ export default function ThemeToggle({
         }`}
       >
         <span>{targetLabel}</span>
-        <SwitchTrack checked={dark} icon={<MoonIcon width={12} height={12} />} />
+        <SwitchTrack
+          checked={dark}
+          icons={{ off: <SunIcon width={12} height={12} />, on: <MoonIcon width={12} height={12} /> }}
+        />
       </button>
     );
   }

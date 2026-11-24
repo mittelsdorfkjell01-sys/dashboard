@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { usePresence } from "../../lib/usePresence";
 
 // Nested modals used to leave their background inert. Each modal snapshotted
 // body.children on open and restored to that snapshot on close, so when a
@@ -56,8 +57,9 @@ function popModalLock(): void {
  * Centered modal chassis shared by every dialog that is not a bottom sheet:
  * the public account confirm/prompt dialogs (ConfirmDialog, PromptDialog) and
  * the admin dialogs. Scrim + a surface card; closes on Esc or a scrim click;
- * traps focus and restores it to the trigger on close. No animation library —
- * these dialogs are utilitarian; the public search/filter overlays are sheets.
+ * traps focus and restores it to the trigger on close. No animation library:
+ * the card grows from 0.96 and fades in over 200ms and leaves in 150ms, plain
+ * CSS (.swd-modal, chosen 2026-11-24).
  */
 export default function Modal({
   open,
@@ -89,6 +91,7 @@ export default function Modal({
   // field after each keystroke.
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const presence = usePresence(open, 150);
 
   useEffect(() => {
     if (!open) return;
@@ -130,13 +133,15 @@ export default function Modal({
     };
   }, [open]);
 
-  if (!open) return null;
+  // Rendered while open, and for the 150ms of the closing animation after.
+  if (!open && !presence.mounted) return null;
 
   return createPortal(
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-modal grid place-items-center bg-black/30 p-4"
-      onClick={onClose}
+      data-shown={open && presence.shown}
+      className="swd-modal fixed inset-0 z-modal grid place-items-center bg-black/30 p-4"
+      onClick={open ? onClose : undefined}
     >
       <div
         ref={cardRef}

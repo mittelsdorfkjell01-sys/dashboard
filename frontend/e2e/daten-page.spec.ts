@@ -938,8 +938,13 @@ test("Beim Runterscrollen bleibt oben links ein Zurück-Pfeil, auf Info und Date
     await expect(pinned).toHaveAttribute("aria-hidden", "true");
     await page.mouse.wheel(0, 1200);
     await expect(pinned).not.toHaveAttribute("aria-hidden", "true");
-    const box = await pinned.boundingBox();
-    expect(box && box.x < 40 && box.y < 60 && box.width >= 44 && box.height >= 44).toBeTruthy();
+    // The arrow slides in from the left edge (300ms); judge where it settles.
+    await expect
+      .poll(async () => {
+        const box = await pinned.boundingBox();
+        return Boolean(box && box.x >= 0 && box.x < 40 && box.y < 60 && box.width >= 44 && box.height >= 44);
+      })
+      .toBe(true);
     if (process.env.SCROLL_BACK_SHOTS) { await page.waitForTimeout(800); await page.screenshot({ path: `${process.env.SCROLL_BACK_SHOTS}/spot-${tab}.png` }); }
   }
   await page.locator("[data-scroll-back]").click();

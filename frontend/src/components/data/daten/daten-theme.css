@@ -7,7 +7,7 @@
    near-black Figma canvas. Kept in its own file (imported by DatenPage) so the
    Daten rebuild stays isolated from index.css. */
 .daten-dark {
-  --sw-page: #0A0C0E;
+  --sw-page: var(--sw-daten-page);
   --sw-band: #14181C;
   --sw-surface: #12161A;
   --sw-ink: #F3F0EA;

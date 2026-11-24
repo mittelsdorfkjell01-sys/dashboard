@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -10,7 +10,11 @@ import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { buildMenuSearchIndex, searchMenu } from "../lib/menuSearch";
 import { consumeAccountMenuRequest } from "../lib/accountMenuReturn";
+import { usePresence } from "../lib/usePresence";
 import type { TranslationKey } from "../lib/i18n";
+
+/** The menu opens in 300ms (index.css `.swd-reveal`) and closes in 200ms. */
+const MENU_CLOSE_MS = 200;
 
 interface NavItem {
   /** Catalogue key, resolved at render — see lib/i18n/locales/de.ts. */
@@ -104,6 +108,10 @@ export default function AccountMenu({
   // open menu (data arriving, the session check resolving).
   const close = useCallback(() => setOpen(false), []);
 
+  // Each variant stays mounted through its closing animation (see .swd-reveal).
+  const dropdown = usePresence(open && desktop, MENU_CLOSE_MS);
+  const sheet = usePresence(open && !desktop, MENU_CLOSE_MS);
+
   const onLogout = async () => {
     close();
     await logout();
@@ -136,12 +144,21 @@ export default function AccountMenu({
           outside-click listener alive on mobile: a tap on the portaled sheet
           counted as "outside", closing the menu on mousedown so the link's
           click never fired — the sheet just closed and no navigation happened. */}
-      {open && desktop && (
-        <DesktopDropdown user={user} onClose={close} onLogout={onLogout} signInHref={signInHref} />
+      {dropdown.mounted && (
+        <DesktopDropdown
+          shown={dropdown.shown}
+          leaving={!open}
+          user={user}
+          onClose={close}
+          onLogout={onLogout}
+          signInHref={signInHref}
+        />
       )}
 
-      {open && !desktop && (
+      {sheet.mounted && (
         <MobileSheet
+          shown={sheet.shown}
+          leaving={!open}
           user={user}
           onClose={close}
           onLogout={onLogout}
@@ -375,11 +392,16 @@ function MenuBody({
 // --- desktop dropdown ------------------------------------------------------
 
 function DesktopDropdown({
+  shown,
+  leaving,
   user,
   onClose,
   onLogout,
   signInHref,
 }: {
+  shown: boolean;
+  /** Closing: the panel is still animating out and must not take taps. */
+  leaving: boolean;
   user: Account;
   onClose: () => void;
   onLogout: () => void;
@@ -388,6 +410,15 @@ function DesktopDropdown({
   const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
+  // Circle centre: the menu button above the panel's right edge. The radius
+  // reaches the far (bottom-left) corner plus the float shadow, no further.
+  const [radius, setRadius] = useState("200%");
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const shadow = 100;
+    setRadius(`${Math.ceil(Math.hypot(el.offsetWidth - 40 + shadow, el.offsetHeight + 32 + shadow))}px`);
+  }, []);
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) onClose();
@@ -408,7 +439,11 @@ function DesktopDropdown({
       ref={ref}
       role="dialog"
       aria-label={t("menu.trigger")}
-      className="absolute right-0 top-[calc(100%+10px)] hidden max-h-[calc(100svh-6rem)] w-80 flex-col overflow-y-auto overscroll-contain rounded-card bg-surface p-2 shadow-float ring-1 ring-line sm:flex"
+      data-shown={shown}
+      data-leaving={leaving}
+      // The dropdown opens as a circle out of the menu button above it.
+      style={{ "--swd-rx": "calc(100% - 40px)", "--swd-ry": "-32px", "--swd-rr": radius } as React.CSSProperties}
+      className="swd-reveal absolute right-0 top-[calc(100%+10px)] hidden max-h-[calc(100svh-6rem)] w-80 flex-col overflow-y-auto overscroll-contain rounded-card bg-surface p-2 shadow-float ring-1 ring-line sm:flex"
     >
       <MenuSearch query={query} onQueryChange={setQuery} onNavigate={onClose} rowClass={rowClass} autoFocus />
       {!query.trim() && (
@@ -421,12 +456,17 @@ function DesktopDropdown({
 // --- mobile full-screen sheet ----------------------------------------------
 
 function MobileSheet({
+  shown,
+  leaving,
   user,
   onClose,
   onLogout,
   returnFocusRef,
   signInHref,
 }: {
+  shown: boolean;
+  /** Closing: the panel is still animating out and must not take taps. */
+  leaving: boolean;
   user: Account;
   onClose: () => void;
   onLogout: () => void;
@@ -435,6 +475,17 @@ function MobileSheet({
 }) {
   const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
+  // The sheet opens as a circle out of the burger that opened it, and closes
+  // back into it. Measured once per opening; the header does not move meanwhile.
+  const [[originX, originY, radius]] = useState(() => {
+    const r = returnFocusRef.current?.getBoundingClientRect();
+    const x = r ? r.left + r.width / 2 : window.innerWidth - 28;
+    const y = r ? r.top + r.height / 2 : 28;
+    // Exactly to the farthest screen corner: a larger circle would cover the
+    // screen in the first few frames and the reveal would not be seen.
+    const reach = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+    return [`${Math.round(x)}px`, `${Math.round(y)}px`, `${Math.ceil(reach)}px`];
+  });
   const closeRef = useRef<HTMLButtonElement>(null);
   const [query, setQuery] = useState("");
   // Read through a ref so the effect below runs once per opening, whatever the
@@ -484,7 +535,15 @@ function MobileSheet({
   const rowClass = `flex min-h-11 items-center gap-3 rounded-card px-3 text-caption text-ink transition-colors active:bg-band ${ROW_FOCUS}`;
 
   return createPortal(
-    <div className="fixed inset-0 z-menu flex flex-col bg-page sm:hidden" role="dialog" aria-modal="true" aria-label={t("menu.trigger")}>
+    <div
+      className="swd-reveal fixed inset-0 z-menu flex flex-col bg-page sm:hidden"
+      data-shown={shown}
+      data-leaving={leaving}
+      style={{ "--swd-rx": originX, "--swd-ry": originY, "--swd-rr": radius } as React.CSSProperties}
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("menu.trigger")}
+    >
       <div ref={panelRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3">
         {/* The close affordance alone on the top line, top-right. */}
         <div className="flex justify-end">
@@ -495,7 +554,12 @@ function MobileSheet({
             aria-label={t("menu.close")}
             className={`grid h-11 w-11 place-items-center rounded-full text-ink ${ROW_FOCUS}`}
           >
-            <CloseIcon className="text-title" />
+            {/* Turns in where the burger was, so the burger reads as becoming the ✕. */}
+            <CloseIcon
+              className={`text-title transition-transform duration-base motion-reduce:transition-none ${
+                shown ? "rotate-0 scale-100" : "-rotate-90 scale-50"
+              }`}
+            />
           </button>
         </div>
 
