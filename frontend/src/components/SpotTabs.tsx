@@ -46,7 +46,7 @@ export default function SpotTabs({ tabs }: { tabs: SpotTab[] }) {
   };
 
   return (
-    <div className="bg-page pt-12">
+    <div className="bg-page pt-12 transition-colors duration-slow motion-reduce:transition-none">
       <div
         role="tablist"
         aria-label="Spot-Ansicht"

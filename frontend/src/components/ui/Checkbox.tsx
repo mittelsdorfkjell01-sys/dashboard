@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 import type { InputHTMLAttributes, ReactNode } from "react";
-import { choiceInput, choiceLabel, type ChoiceLayout } from "./choiceClass";
+import { choiceBox, choiceFill, choiceFrame, choiceLabel, choiceMark, type ChoiceLayout } from "./choiceClass";
 
 type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "children"> & {
   /** Label content. May contain inline controls (e.g. a "terms" link button). */
@@ -12,11 +12,17 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "children"> & 
   className?: string;
 };
 
-/** Atom: checkbox with its label. Native input, brand-tinted, 20px. */
+/** Atom: checkbox with its label. Native input, drawn box, 20px (see choiceClass). */
 const Checkbox = forwardRef<HTMLInputElement, Props>(
   ({ children, description, layout = "plain", className = "", ...props }, ref) => (
     <label className={`${choiceLabel[layout]} ${className}`}>
-      <input ref={ref} type="checkbox" className={`${choiceInput} ${layout === "plain" ? "mt-px" : ""}`} {...props} />
+      <span className={`${choiceFrame} ${layout === "plain" ? "mt-px" : ""}`}>
+        <input ref={ref} type="checkbox" className={`${choiceBox} rounded-[6px]`} {...props} />
+        <span aria-hidden="true" className={`${choiceFill} rounded-[6px]`} />
+        <svg aria-hidden="true" viewBox="0 0 16 16" className={`${choiceMark} h-3.5 w-3.5 text-white`} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3.5 8.5l3 3 6-7" />
+        </svg>
+      </span>
       <span className="min-w-0">
         {children}
         {description && <span className="mt-0.5 block text-caption text-muted">{description}</span>}

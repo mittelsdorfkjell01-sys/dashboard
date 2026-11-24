@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useImageReveal } from "../lib/useImageReveal";
 import { cardHotlinkSrcSet, hostedSrcSet, objectPosition, unsplashSized } from "../lib/heroSource";
 
 // Start a below-fold card while it is still roughly one mobile viewport away.
@@ -40,6 +41,7 @@ export default function SpotImage({
 }) {
   const placeholderRef = useRef<HTMLDivElement | null>(null);
   const [shouldLoad, setShouldLoad] = useState(eager);
+  const reveal = useImageReveal(src ?? undefined);
 
   // Native loading="lazy" deliberately starts well before an image reaches the
   // viewport. That is useful for ordinary pages, but disastrous for this dense
@@ -89,7 +91,8 @@ export default function SpotImage({
         alt={name}
         loading={eager ? "eager" : "lazy"}
         decoding="async"
-        className={`h-full w-full object-cover ${className}`}
+        {...reveal}
+        className={`swd-img-reveal h-full w-full object-cover ${className}`}
         style={{
           objectPosition: objectPosition(focal),
           transform: safeRotation

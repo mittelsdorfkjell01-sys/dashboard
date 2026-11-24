@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
+import { useStretchIndicator } from "../../../lib/useStretchIndicator";
 import type { NormalizedForecastDay, NormalizedForecastHour, NormalizedForecastSeries } from "../../../lib/forecastNormalization";
 import { isSpotForecastDisplayHour, spotForecastDayHours } from "../../../lib/spotForecastWindow";
 import { windColor } from "../../../lib/windScale";
@@ -35,6 +36,11 @@ export default function ForecastDayStrip({ forecast }: { forecast: NormalizedFor
   const model = useMemo(() => buildMeteogramModel(forecast, isSpotForecastDisplayHour), [forecast]);
   const days = useMemo(() => forecast.days.slice(0, MAX_DAYS), [forecast]);
   const dayBars = useMemo(() => days.map((day) => miniBars(day.hours)), [days]);
+  // The selected day carries a ring that stretches over to the next pick
+  // (same motion as the segmented controls, see useStretchIndicator).
+  const trayRef = useRef<HTMLDivElement>(null);
+  const ringRef = useRef<HTMLSpanElement>(null);
+  useStretchIndicator(trayRef, ringRef, selectedForecast?.localDate ?? "");
   if (!days.length) return null;
 
   // Shared meteogram scale, widened only if a day's bar exceeds it so bars never
@@ -54,11 +60,18 @@ export default function ForecastDayStrip({ forecast }: { forecast: NormalizedFor
 
   return (
     <div
-      className="flex snap-x snap-mandatory overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-10 lg:overflow-visible"
+      ref={trayRef}
+      className="relative flex snap-x snap-mandatory overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-10 lg:overflow-visible"
       style={{ gap: TILE_GAP }}
       role="group"
       aria-label="Tagesübersicht — Tag im Stundenforecast anzeigen"
     >
+      <span
+        ref={ringRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute top-0 z-[1] rounded-card opacity-0 ring-2 ring-inset ring-teal"
+        style={{ height: TILE_H }}
+      />
       {days.map((day, index) => {
         const date = day.local_date ?? day.date;
         const d = new Date(`${date}T12:00:00Z`);

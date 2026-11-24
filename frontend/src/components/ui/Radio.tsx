@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 import type { InputHTMLAttributes, ReactNode } from "react";
-import { choiceInput, choiceLabel, type ChoiceLayout } from "./choiceClass";
+import { choiceBox, choiceFill, choiceFrame, choiceLabel, choiceMark, type ChoiceLayout } from "./choiceClass";
 
 type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "children"> & {
   children: ReactNode;
@@ -9,10 +9,14 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "children"> & 
 };
 
 /** Atom: radio option with its label. Group several under one `name` inside a
- *  <fieldset> with a <legend>. Native input, brand-tinted, 20px. */
+ *  <fieldset> with a <legend>. Native input, drawn circle, 20px (see choiceClass). */
 const Radio = forwardRef<HTMLInputElement, Props>(({ children, layout = "row", className = "", ...props }, ref) => (
   <label className={`${choiceLabel[layout]} ${className}`}>
-    <input ref={ref} type="radio" className={`${choiceInput} ${layout === "plain" ? "mt-px" : ""}`} {...props} />
+    <span className={`${choiceFrame} ${layout === "plain" ? "mt-px" : ""}`}>
+      <input ref={ref} type="radio" className={`${choiceBox} rounded-full`} {...props} />
+      <span aria-hidden="true" className={`${choiceFill} rounded-full`} />
+      <span aria-hidden="true" className={`${choiceMark} h-2 w-2 rounded-full bg-white`} />
+    </span>
     <span className="min-w-0">{children}</span>
   </label>
 ));

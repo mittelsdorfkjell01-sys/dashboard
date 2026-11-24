@@ -51,7 +51,7 @@ export default function VisitedButton({ spotId }: { spotId: string }) {
       aria-pressed={visited}
       aria-label={visited ? t("visits.remove") : t("visits.add")}
       title={visited ? t("visits.added") : t("visits.add")}
-      className={`grid h-11 w-11 place-items-center rounded-full border transition-colors active:scale-[0.97] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+      className={`grid h-11 w-11 place-items-center rounded-full border transition-[background-color,border-color,color,transform] duration-fast active:scale-[0.97] motion-reduce:active:scale-100 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
         visited ? "border-ink bg-ink text-white" : "border-line text-ink hover:bg-band"
       }`}
     >

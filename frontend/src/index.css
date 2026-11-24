@@ -75,6 +75,9 @@
      Tailwind's `transition*` utilities default to these (see config), and
      hand-written CSS uses the same variables. Theme-independent. */
   --sw-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Ground of the always-dark Daten instrument (daten-theme.css). Declared
+     here so the spot page can cross-fade to it before that page is loaded. */
+  --sw-daten-page: #0A0C0E;
   --sw-dur-fast: 150ms;
   --sw-dur-base: 200ms;
   --sw-dur-slow: 300ms;
@@ -686,4 +689,123 @@ html { -webkit-tap-highlight-color: transparent; }
     left: 0;
     right: 0;
   }
+}
+
+/* Staggered entrance — the items of a panel that just opened arrive one after
+   another (search sheet tiles, menu rows). The container carries
+   `data-shown="true"` once it is in place; each item sets `--i` (0, 1, 2 …).
+   At most ~6 items, so nobody waits for the last row. Closing has no delay. */
+.swd-stagger-item {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity var(--sw-dur-fast) var(--sw-ease), transform var(--sw-dur-base) var(--sw-ease);
+}
+[data-shown="true"] .swd-stagger-item {
+  opacity: 1;
+  transform: none;
+  transition-delay: calc(var(--swd-stagger-start, 90ms) + var(--i, 0) * var(--swd-stagger-step, 40ms));
+}
+@media (prefers-reduced-motion: reduce) {
+  .swd-stagger-item { transform: none; transition: opacity var(--sw-dur-fast) var(--sw-ease); }
+  [data-shown="true"] .swd-stagger-item { transition-delay: 0s; }
+}
+
+/* Circular reveal — the burger menu opens as a circle out of the button that
+   opened it and closes back into it (chosen 2026-11-24). The element sets the
+   circle's centre in `--swd-rx` / `--swd-ry`, its open radius in `--swd-rr`
+   (measured: just past the farthest corner, plus a floating panel's shadow —
+   a much larger circle covers everything in the first frames and the reveal
+   is never seen) and `data-shown`. Content
+   fades in once the circle has most of the panel. Reduced motion: fade only. */
+.swd-reveal {
+  clip-path: circle(0px at var(--swd-rx, 100%) var(--swd-ry, 0px));
+  transition: clip-path var(--sw-dur-base) var(--sw-ease);
+}
+.swd-reveal[data-shown="true"] {
+  clip-path: circle(var(--swd-rr, 150%) at var(--swd-rx, 100%) var(--swd-ry, 0px));
+  transition-duration: var(--sw-dur-slow);
+}
+.swd-reveal > * { opacity: 0; transition: opacity 100ms var(--sw-ease); }
+.swd-reveal[data-shown="true"] > * { opacity: 1; transition: opacity var(--sw-dur-fast) var(--sw-ease) 90ms; }
+/* While it closes, the panel is mostly invisible: taps go nowhere. */
+.swd-reveal[data-leaving="true"] { pointer-events: none; }
+@media (prefers-reduced-motion: reduce) {
+  .swd-reveal, .swd-reveal[data-shown="true"] { clip-path: none; transition: opacity var(--sw-dur-fast) var(--sw-ease); }
+  .swd-reveal { opacity: 0; }
+  .swd-reveal[data-shown="true"] { opacity: 1; }
+  .swd-reveal > *, .swd-reveal[data-shown="true"] > * { opacity: 1; transition: none; }
+}
+
+/* Drop-in — small panels and notes that open under their trigger (sort
+   dropdown, forecast validity) fade in and settle 6px down over 200ms, and
+   leave in 150ms. Set `data-shown` (see lib/usePresence). Reduced motion:
+   fade only. */
+.swd-drop {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity var(--sw-dur-fast) var(--sw-ease), transform var(--sw-dur-fast) var(--sw-ease);
+}
+.swd-drop[data-shown="true"] {
+  opacity: 1;
+  transform: none;
+  transition-duration: var(--sw-dur-base);
+}
+@media (prefers-reduced-motion: reduce) {
+  .swd-drop { transform: none; }
+}
+
+/* Dialog chassis (ui/Modal): the scrim fades, the card grows from 0.96 and
+   fades in over 200ms; closing takes 150ms and takes no taps. */
+.swd-modal { opacity: 0; transition: opacity var(--sw-dur-fast) var(--sw-ease); }
+.swd-modal > [role="dialog"] { transform: scale(0.96); transition: transform var(--sw-dur-fast) var(--sw-ease); }
+.swd-modal[data-shown="true"] { opacity: 1; transition-duration: var(--sw-dur-base); }
+.swd-modal[data-shown="true"] > [role="dialog"] { transform: none; transition-duration: var(--sw-dur-base); }
+.swd-modal:not([data-shown="true"]) { pointer-events: none; }
+@media (prefers-reduced-motion: reduce) {
+  .swd-modal > [role="dialog"] { transform: none; }
+}
+
+/* Photo reveal (lib/useImageReveal): fades in and settles from 1.04 once
+   loaded. Uses the standalone `scale` property so it never fights the
+   horizon-rotation `transform` an image may carry inline. */
+.swd-img-reveal { opacity: 0; scale: 1.04; }
+.swd-img-reveal[data-reveal="instant"] { opacity: 1; scale: 1; }
+.swd-img-reveal[data-reveal="loaded"] {
+  opacity: 1;
+  scale: 1;
+  transition: opacity 250ms var(--sw-ease), scale var(--sw-dur-slow) var(--sw-ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  .swd-img-reveal { scale: 1; }
+  .swd-img-reveal[data-reveal="loaded"] { transition: opacity var(--sw-dur-fast) var(--sw-ease); }
+}
+
+/* Edge entrances (chosen 2026-11-24, "Vom Rand herein"): the scroll-back
+   arrow slides in from the left edge when it appears and back out when it
+   goes; the map pill rises from the bottom edge once, when its page opens.
+   Standalone `translate`, so neither fights an element's own transform. */
+[data-scroll-back] {
+  transition: opacity var(--sw-dur-fast) var(--sw-ease), translate var(--sw-dur-slow) var(--sw-ease);
+}
+[data-scroll-back][aria-hidden="true"] { translate: -20px 0; }
+.swd-pill-rise { animation: swd-pill-rise var(--sw-dur-slow) var(--sw-ease) both; }
+@keyframes swd-pill-rise {
+  from { opacity: 0; translate: 0 28px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-scroll-back][aria-hidden="true"] { translate: none; }
+  .swd-pill-rise { animation-name: fade; animation-duration: var(--sw-dur-fast); }
+}
+
+/* View swap (Windmonate Raster ↔ Kurve, chosen 2026-11-24): the newly chosen
+   reading fades up 4px into place on mount. Keyed elements re-mount, so this
+   runs on every switch; reduced motion keeps only the fade. */
+.swd-view-in { animation: swd-view-in var(--sw-dur-base) var(--sw-ease) both; }
+@keyframes swd-view-in {
+  from { opacity: 0; translate: 0 4px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .swd-view-in { animation-name: fade; }
 }

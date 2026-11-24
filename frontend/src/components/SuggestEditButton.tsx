@@ -113,7 +113,7 @@ export default function SuggestEditButton({ spot }: { spot: Spot }) {
         onClick={() => setOpen(true)}
         aria-label="Änderung vorschlagen"
         title="Änderung vorschlagen"
-        className="grid h-11 w-11 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band active:scale-[0.97] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        className="grid h-11 w-11 place-items-center rounded-full border border-line text-ink transition-[background-color,transform] duration-fast hover:bg-band active:scale-[0.97] active:bg-band motion-reduce:active:scale-100 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
         <PencilIcon className="text-lead" />
       </button>

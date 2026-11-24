@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { usePresence } from "../lib/usePresence";
 import { SortIcon } from "../lib/icons";
 import {
   LEVELS,
@@ -37,6 +38,8 @@ export default function SortDropdown({
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  // Stays mounted through its 150ms close; drops in 6px on open (.swd-drop).
+  const panel = usePresence(open, 150);
   const panelId = useId();
 
   const count = activeFilterCount(value);
@@ -64,8 +67,8 @@ export default function SortDropdown({
 
   // Move focus into the panel when it opens.
   useEffect(() => {
-    if (open) panelRef.current?.querySelector<HTMLElement>("button, [tabindex]")?.focus();
-  }, [open]);
+    if (open && panel.mounted) panelRef.current?.querySelector<HTMLElement>("button, [tabindex]")?.focus();
+  }, [open, panel.mounted]);
 
   const setLevel = (l: string) =>
     onChange({ ...value, level: value.level === l ? undefined : l });
@@ -110,13 +113,14 @@ export default function SortDropdown({
         )}
       </button>
 
-      {open && (
+      {panel.mounted && (
         <div
           ref={panelRef}
+          data-shown={panel.shown}
           id={panelId}
           role="dialog"
           aria-label="Sortieren und filtern"
-          className="absolute right-0 z-30 mt-3 w-[300px] rounded-card bg-surface p-5 ring-1 ring-line"
+          className="swd-drop absolute right-0 z-30 mt-3 w-[300px] rounded-card bg-surface p-5 ring-1 ring-line"
         >
           {/* Sortierung */}
           <fieldset>

@@ -49,9 +49,14 @@ export default function FavoriteButton({ spot }: { spot: Spot }) {
       aria-pressed={fav}
       aria-label={fav ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}
       title={fav ? "In Favoriten gespeichert" : "Zu Favoriten hinzufügen"}
-      className="grid h-11 w-11 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band active:scale-[0.97] disabled:opacity-60 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      className="grid h-11 w-11 place-items-center rounded-full border border-line text-ink transition-[background-color,transform] duration-fast hover:bg-band active:scale-[0.97] active:bg-band motion-reduce:active:scale-100 disabled:opacity-60 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
     >
-      {fav ? <BookmarkFilledIcon className="text-lead" /> : <BookmarkIcon className="text-lead" />}
+      {/* Both glyphs stay mounted and cross-fade, so saving fills the mark
+          softly instead of swapping it. */}
+      <BookmarkIcon className="col-start-1 row-start-1 text-lead" />
+      <BookmarkFilledIcon
+        className={`col-start-1 row-start-1 text-lead transition-opacity duration-fast ${fav ? "opacity-100" : "opacity-0"}`}
+      />
     </button>
     {error && <span role="alert" className="absolute left-0 top-full z-10 mt-1 w-44 rounded-card bg-danger-bg p-2 text-caption text-danger">{error}</span>}
     </span>
