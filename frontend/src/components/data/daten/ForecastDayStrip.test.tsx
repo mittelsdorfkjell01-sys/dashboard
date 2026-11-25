@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { NormalizedForecastDay, NormalizedForecastHour, NormalizedForecastSeries } from "../../../lib/forecastNormalization";
 import { SpotDataScopeProvider } from "../../../state/SpotDataScope";
-import ForecastDayStrip from "./ForecastDayStrip";
+import ForecastDayStrip, { ForecastDayStripSkeleton } from "./ForecastDayStrip";
 
 function hour(date: string, h: number, wind: number): NormalizedForecastHour {
   return {
@@ -83,5 +83,34 @@ describe("ForecastDayStrip", () => {
 
     // Fifteen bars regardless of how many hours the day carries.
     expect((html.match(/data-wind-bar/g) ?? [])).toHaveLength(15);
+  });
+
+  it("shows the total wave per hour in the wave focus, in the sea's colour", () => {
+    const withWaves = (date: string) => {
+      const base = day(date);
+      return {
+        ...base,
+        hours: base.hours.map((h, i) => ({ ...h, waves: { total_wave: { significant_height_m: 0.4 + i * 0.1 } } })),
+      } as NormalizedForecastDay;
+    };
+    const data = forecast([withWaves("2026-09-03"), withWaves("2026-09-04")]);
+    const html = renderToStaticMarkup(
+      <SpotDataScopeProvider forecast={data}>
+        <ForecastDayStrip forecast={data} focus="wave" />
+      </SpotDataScopeProvider>,
+    );
+    expect(html).toContain("var(--sw-data-swell)");
+    // The day's peak is spelled in metres, not knots: the band's last slot
+    // is 20:00, where the sample reaches 1.1 m.
+    expect(html).toMatch(/bis 1,1 m/);
+    expect(html).not.toMatch(/bis \d+ kn/);
+  });
+
+  it("holds its final size while loading", () => {
+    const html = renderToStaticMarkup(<ForecastDayStripSkeleton />);
+    expect((html.match(/grid-cols-10/g) ?? []).length).toBe(1);
+    // Ten days of fifteen placeholder bars, the same band height as the real one.
+    expect((html.match(/flex-1 rounded-t/g) ?? [])).toHaveLength(150);
+    expect(html).toContain("height:42px");
   });
 });
