@@ -59,18 +59,16 @@ describe("ForecastDayStrip", () => {
     // an invalid oversized response reaches the browser.
     expect((html.match(/<button(?: |\/?>)/g) ?? [])).toHaveLength(10);
     expect(html).toContain("Im Stundenforecast anzeigen");
-    // Mobile: one horizontally scrollable row (~5 tiles wide, snap); desktop
-    // (lg) falls back to a full-width ten-column grid.
-    expect(html).toContain("overflow-x-auto");
-    expect(html).toContain("snap-x");
-    expect(html).toContain("lg:grid-cols-10");
+    // All ten days in one row at every width — no sideways scrolling.
+    expect(html).toContain("grid-cols-10");
+    expect(html).not.toContain("overflow-x-auto");
     // Weekday + date caption (2026-09-03 is a Thursday → "DO 03.09.").
     expect(html).toContain("03.09.");
-    // Exactly eight fixed-slot bars (06, 08, … 20) per real hourly day.
-    expect((html.match(/data-wind-bar/g) ?? [])).toHaveLength(10 * 8);
+    // One bar per hour of the spot window (06…20) per day — one continuous band.
+    expect((html.match(/data-wind-bar/g) ?? [])).toHaveLength(10 * 15);
   });
 
-  it("still renders all eight bars for a day already in progress (missing early hours)", () => {
+  it("still renders all fifteen bars for a day already in progress (missing early hours)", () => {
     // A day whose forecast only starts at 14:00 — its 06..12 slots have no data.
     const partial: NormalizedForecastDay = {
       ...day("2026-09-05"),
@@ -83,7 +81,7 @@ describe("ForecastDayStrip", () => {
       </SpotDataScopeProvider>,
     );
 
-    // Eight bars regardless of how many hours the day carries.
-    expect((html.match(/data-wind-bar/g) ?? [])).toHaveLength(8);
+    // Fifteen bars regardless of how many hours the day carries.
+    expect((html.match(/data-wind-bar/g) ?? [])).toHaveLength(15);
   });
 });

@@ -4,7 +4,7 @@
 // single place that owns programmatic scrolling, so there are no competing
 // scrollTo calls fighting Lenis.
 
-import { useLayoutEffect } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
 import { getLenis } from "../lib/lenis";
 
@@ -14,6 +14,10 @@ let pendingSpotTabScroll: number | null = null;
 export default function ScrollManager() {
   const { pathname, hash, key, state } = useLocation();
   const navigationType = useNavigationType();
+  // The page the last run saw. A change of the query only (a switch that
+  // writes its state into the link: Wind/Welle, the Windmonate windows, the
+  // results view) is the same page — it keeps its scroll position.
+  const lastPathname = useRef(pathname);
 
   useLayoutEffect(() => {
     return () => {
@@ -23,6 +27,8 @@ export default function ScrollManager() {
 
   useLayoutEffect(() => {
     const lenis = getLenis();
+    const samePage = lastPathname.current === pathname;
+    lastPathname.current = pathname;
 
     // Spot-detail tabs are two real routes, but visually they are one page.
     // Keep the target across canonical replace navigations and repeat the
@@ -99,6 +105,10 @@ export default function ScrollManager() {
         return;
       }
     }
+
+    // Same page, new query: stay where the visitor is (2026-11-25, "die Seite
+    // soll nicht neu laden, sondern am gleichen Punkt weitermachen").
+    if (samePage && navigationType !== "POP") return;
 
     const target = navigationType === "POP" ? scrollPositions.get(key) ?? 0 : 0;
     if (lenis) lenis.scrollTo(target, { immediate: true });

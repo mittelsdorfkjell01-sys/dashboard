@@ -30,6 +30,15 @@ export const TEMP_STOPS: TempStop[] = [
 export const COLDEST_TEMP_COLOR = `rgb(${TEMP_STOPS[0][1][0]}, ${TEMP_STOPS[0][1][1]}, ${TEMP_STOPS[0][1][2]})`;
 
 /**
+ * The scale colour as a CSS value that follows the page theme: on the Daten
+ * tab's light ground it is mixed towards ink by `--sw-temp-ink-mix`
+ * (daten-theme.css), on the dark ground it is the scale colour itself.
+ */
+export function tempTone(celsius: number): string {
+  return `color-mix(in srgb, ${tempColor(celsius)}, var(--sw-ink) var(--sw-temp-ink-mix, 0%))`;
+}
+
+/**
  * Map a temperature in °C to its colour on the absolute scale, linearly
  * interpolating between the two surrounding stops and clamping outside the
  * range so extreme values still resolve to the coolest / hottest tone.

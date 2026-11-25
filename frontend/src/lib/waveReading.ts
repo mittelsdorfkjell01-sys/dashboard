@@ -36,3 +36,42 @@ export function headlineWaveM(
 export function hourWaveM(hour: ForecastHour | null | undefined): number | null {
   return headlineWaveM(hour);
 }
+
+type WaveHour = { swell?: number | null; period?: number | null; swell_dir?: number | null; waves?: WaveComponents | null } | null | undefined;
+const num = (value: number | null | undefined): number | null =>
+  typeof value === "number" && Number.isFinite(value) ? value : null;
+
+/**
+ * The sea's period for the wave readouts (Daten wave mode, 2026-11-25): the
+ * total wave's peak period, else its mean period, else the primary wave's
+ * peak period (NOAA sends that one only), else the legacy flat field. Same
+ * rule as the height: never borrowed from the wind sea or a swell partition.
+ */
+export function headlineWavePeriodS(hour: WaveHour): number | null {
+  if (!hour) return null;
+  const total = hour.waves?.total_wave;
+  const primary = hour.waves?.primary_wave;
+  return num(total?.peak_period_s) ?? num(total?.mean_period_s) ?? num(primary?.peak_period_s) ?? num(hour.period);
+}
+
+/** Where the sea comes from (degrees), same order as the period. */
+export function headlineWaveFromDeg(hour: WaveHour): number | null {
+  if (!hour) return null;
+  const total = hour.waves?.total_wave;
+  const primary = hour.waves?.primary_wave;
+  return num(total?.peak_direction_from_deg) ?? num(total?.mean_direction_from_deg)
+    ?? num(primary?.peak_direction_from_deg) ?? num(primary?.mean_direction_from_deg) ?? num(hour.swell_dir);
+}
+
+/** The primary swell partition: height, period and direction, or null when
+ *  the model carries none (null stays null — never filled from the total). */
+export function primarySwell(hour: WaveHour): { heightM: number; periodS: number | null; fromDeg: number | null } | null {
+  const swell = hour?.waves?.primary_swell;
+  const heightM = num(swell?.significant_height_m);
+  if (heightM == null) return null;
+  return {
+    heightM,
+    periodS: num(swell?.peak_period_s) ?? num(swell?.mean_period_s),
+    fromDeg: num(swell?.peak_direction_from_deg) ?? num(swell?.mean_direction_from_deg),
+  };
+}

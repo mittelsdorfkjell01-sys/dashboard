@@ -44,13 +44,47 @@ export const HeartIcon = (p: IconProps) => (
   </svg>
 );
 
-/** Swell/wave glyph — two stacked crests, used in the wind-map point panel and
- *  its hourly forecast strip. The marine wave *value* is not yet published, so
- *  this marks the slot visually until the wave field is activated. */
+/** The wave: one crest that rolls over (2026-11-25, drawn after the user's
+ *  sketch). The single wave mark of the site — row icons, the map's mode
+ *  switch, the forecast tile and the meteogram's sized wave glyph all draw
+ *  this path. Until then: two parallel ripple lines. */
+export const WAVE_PATH = "M1 18c4.5 0 7-2.4 9-6.5S14.5 5 18.2 5C21 5 23 7 23 9.3c0 1.8-1.4 3.2-3.1 3.2-1.5 0-2.6-1.1-2.6-2.5M17.3 10c-2.4 1-3.5 3.6-2.9 6 .5 1.6 2 2.4 3.8 2.4H23";
+
+// The wave by height (chosen 2026-11-25, "E · Gestalt und Größe zusammen"):
+// five stages that tell the sea's height by shape and a little by size —
+// ripple, low swell, a steep wave whose face runs back down to the water,
+// the full rolling crest, and the crest with spray from 3 m. On an absolute
+// scale, never relative to the week.
+const WAVE_STAGES: { below: number; size: number; art: string[] }[] = [
+  { below: 0.5, size: 17, art: ["M2 15.5c1.7 0 1.7-1.6 3.4-1.6s1.7 1.6 3.4 1.6 1.7-1.6 3.4-1.6 1.7 1.6 3.4 1.6 1.7-1.6 3.4-1.6 1.7 1.6 3 1.6"] },
+  { below: 1, size: 19, art: ["M1 17.5c4 0 5.5-5 11-5s7 5 11 5"] },
+  { below: 2, size: 21, art: ["M1 18c4.5 0 6.5-3 8.5-6.2S14 6.5 17.6 6.5c2.6 0 4.5 1.7 4.9 3.9-1.1-.6-2.5-.3-3.1.7-1 1.7-.4 4.7 1.6 7.3", "M21 18.4h2"] },
+  { below: 3, size: 23, art: [""] },
+  { below: Infinity, size: 26, art: ["", "M20.6 2.2v.01M23 3.6v.01M17.4 1.6v.01"] },
+];
+
+export function waveStage(heightM: number): number {
+  return WAVE_STAGES.findIndex((stage) => heightM < stage.below);
+}
+
+/** The wave mark for one reading (Daten meteogram): its stage's drawing at
+ *  its stage's size; the stroke shrinks with the mark (at least 1.3 px). */
+export function SizedWaveIcon({ heightM, className }: { heightM: number; className?: string }) {
+  const stage = WAVE_STAGES[Math.max(0, waveStage(heightM))];
+  const px = Math.max(1.3, (2.2 * stage.size) / 26);
+  return (
+    <svg width={stage.size} height={stage.size} viewBox="0 0 24 24" aria-hidden="true" className={className} fill="none" stroke="currentColor" strokeWidth={(px * 24) / stage.size} strokeLinecap="round" strokeLinejoin="round" overflow="visible">
+      {stage.art.map((d, i) => (
+        // "" is the house wave itself; the spray dots draw a little heavier.
+        <path key={i} d={d || WAVE_PATH} strokeWidth={i > 0 && d.startsWith("M20.6") ? 2.6 : undefined} />
+      ))}
+    </svg>
+  );
+}
+
 export const WaveIcon = (p: IconProps) => (
   <svg {...base} {...p}>
-    <path d="M2 15c2.2 0 2.2-2.4 4.4-2.4S8.6 15 10.8 15s2.2-2.4 4.4-2.4S17.4 15 19.6 15 22 12.6 22 12.6" />
-    <path d="M2 19.5c2.2 0 2.2-2.4 4.4-2.4s2.2 2.4 4.4 2.4 2.2-2.4 4.4-2.4 2.2 2.4 4.4 2.4" />
+    <path d={WAVE_PATH} />
   </svg>
 );
 

@@ -139,7 +139,7 @@ export const en = {
       tides: {
         q: "Tides: for which place and in which time zone?",
         p1: "Tides are calculated for a model point on the coast near the spot, not for your exact launch. In bays, estuaries and behind islands, times and range can differ considerably. A label next to the heading shows how well the point is backed: “Model”, “Reviewed model point”, “Locally calibrated” or “Gauge-calibrated”.",
-        p2: "All times are in the spot's local time, not your device's time zone. High and low water times are approximate and shown with “approx.” or as a time range.",
+        p2: "The curve on the spot page shows the next seven days in the spot's local time, not your device's time zone. High and low water fall on the curve only approximately; depending on the model point the timing can be off by half an hour to an hour and a half.",
         p3: "The astronomical tide shows the relative rise and fall of the water, not an absolute depth. Weather, storm surge, river flow and currents are not included. Where it says “Modelled sea level”, weather effects are included, but the value is less accurate close to the coast. Neither is meant for navigation or as a storm-surge warning.",
         p4: "“Currently unavailable” means there is no reliable tide calculation for this spot. It says nothing about whether the spot has a tide.",
       },

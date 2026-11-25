@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Spot } from "./types";
 import * as api from "./api";
 import { adaptSpot, adaptSpots } from "./adapt";
-import { usePersistentSwr, useSwr, type SwrState } from "./swr";
+import { peek, revalidate, usePersistentSwr, useSwr, type SwrState } from "./swr";
 import type { NormalizedForecastSeries } from "./forecastNormalization";
 export {
   useCommunityFeed,
@@ -316,6 +316,18 @@ export function useSpotForecast(id?: string): AsyncStateReloadable<NormalizedFor
     refreshIntervalMs: 45 * 60_000, jitterRatio: 0.15,
     refreshOnFocus: true, refreshOnReconnect: true, maxAgeMs: 60 * 60_000,
   } : {});
+}
+
+/**
+ * Warm the Daten tab's forecast while the visitor reads the Info tab
+ * (2026-11-25, "Daten-Tab vorladen"), so switching tabs shows the data at
+ * once. Joins an in-flight request and skips a cached one.
+ */
+export function prefetchSpotForecast(id: string): void {
+  const key = `forecast:${id}`;
+  const cached = peek(key);
+  if (cached?.data !== undefined || cached?.inflight) return;
+  void revalidate(key, () => api.getSpotForecast(id, 10));
 }
 
 /** Forecast hour nearest to now for lightweight hints on the Info tab. */

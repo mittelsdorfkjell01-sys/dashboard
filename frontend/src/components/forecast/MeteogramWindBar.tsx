@@ -42,12 +42,17 @@ export default function MeteogramWindBar({
   maximum,
   windUnit,
   proportionalHeight = METEOGRAM_WIND_HEIGHT,
+  gustTone = "wind",
 }: {
   wind: number;
   gust?: number | null;
   maximum: number;
   windUnit: WindUnit;
   proportionalHeight?: number;
+  /** Hue of the translucent gust bar behind: the wind's own colour (map
+   *  sheet) or the gust's colour on the wind scale (Spot-Daten, 2026-11-24),
+   *  so a gusty hour shows both strengths at once. */
+  gustTone?: "wind" | "gust";
 }) {
   const safeMaximum = Math.max(maximum, 5);
   const gustValue = Math.max(gust ?? wind, wind);
@@ -59,7 +64,7 @@ export default function MeteogramWindBar({
     <span
       data-wind-bar="gust"
       className="relative rounded-[5px]"
-      style={{ width: METEOGRAM_BAR_WIDTH, height: gustHeight, background: fade(windColor(wind)) }}
+      style={{ width: METEOGRAM_BAR_WIDTH, height: gustHeight, background: fade(windColor(gustTone === "gust" ? gustValue : wind)) }}
     >
       {showGust && <BarValue>{windValue(gustValue, windUnit)}</BarValue>}
       <span

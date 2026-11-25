@@ -182,3 +182,42 @@ test("V3 module has no serious/critical accessibility violations", async ({ page
   const results = await new AxeBuilder({ page }).include('[aria-label*="52 Wochen"]').analyze();
   expect(results.violations.filter((item) => ["serious", "critical"].includes(item.impact ?? ""))).toEqual([]);
 });
+
+test("V2 Windmonate: the period is chosen on one block per year", async ({ page }) => {
+  await baseRoutes(page, { v3: "404" });
+  const sections = Array.from({ length: 48 }, (_, t) => ({
+    month: Math.floor(t / 4) + 1, section: t + 1, day_start: [1, 8, 16, 24][t % 4], day_end: [7, 15, 23, "month_end"][t % 4],
+    date_label: "", calendar_days: 7, daylight_hours: 12,
+    windows: {
+      "10_15": { hours: 0, percent: 20, hours_per_day: 2 },
+      "15_20": { hours: 0, percent: 12, hours_per_day: 1.4 },
+      "20_30": { hours: 0, percent: 5, hours_per_day: 0.6 },
+      "30_plus": { hours: 0, percent: 0, hours_per_day: 0 },
+    },
+  }));
+  await page.route(/\/spots\/test\/wind-climatology(\?|$)/, (route) => route.fulfill({
+    json: { status: "ready", period: { start_year: 1996, end_year: 2025 }, available_years: { min: 1996, max: 2025 }, model: "ERA5", wind_height_m: 10, grid: { resolution_degrees: 0.25 }, sections },
+  }));
+  await page.goto("/spot/test/daten");
+  const slider = page.getByRole("slider", { name: "Erstes Jahr" });
+  await slider.scrollIntoViewIfNeeded();
+  await expect(slider).toHaveAttribute("aria-valuenow", "1996");
+  await expect(slider.locator(".bg-teal")).toHaveCount(30);
+
+  await slider.focus();
+  await page.keyboard.press("PageUp");
+  await expect(slider).toHaveAttribute("aria-valuenow", "2001");
+  await expect(slider.locator(".bg-teal")).toHaveCount(25);
+  await page.keyboard.press("End");
+  await expect(slider).toHaveAttribute("aria-valuenow", "2020");
+
+  // A tap on a block sets the start to that year.
+  const box = (await slider.boundingBox())!;
+  await page.mouse.click(box.x + 2, box.y + box.height / 2);
+  await expect(slider).toHaveAttribute("aria-valuenow", "1996");
+  if (process.env.SLIDER_SHOTS) {
+    await page.keyboard.press("PageUp");
+    await page.waitForTimeout(500);
+    await slider.locator("xpath=../..").screenshot({ path: `${process.env.SLIDER_SHOTS}/slider-${test.info().project.name}.png` });
+  }
+});

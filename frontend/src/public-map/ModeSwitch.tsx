@@ -1,6 +1,4 @@
-import { useRef } from "react";
 import { MapIcon, WaveIcon, WindIcon } from "../lib/icons";
-import { useStretchIndicator } from "../lib/useStretchIndicator";
 import type { ExplorerMode } from "../weather-map/fieldUrlState";
 
 const MODES: Array<{ mode: ExplorerMode; label: string; Icon: typeof WindIcon }> = [
@@ -9,24 +7,43 @@ const MODES: Array<{ mode: ExplorerMode; label: string; Icon: typeof WindIcon }>
   { mode: "waves", label: "Wellen", Icon: WaveIcon },
 ];
 
+const ALL_MODES: ExplorerMode[] = ["spots", "wind", "waves"];
+
 /**
- * The map's one mode switch, centred at the top edge (2026-11-20: moved up
- * from the bottom island on request). A segmented pill: the active mode shows
- * its word, the others their icon only — on desktop all three carry words.
- * The active surface stretches over to a newly picked mode (useStretchIndicator).
+ * The map's one mode switch, centred at the top edge. Since 2026-11-25 it
+ * looks like the small switches on the Daten tab's Windmonate: a tray of
+ * equal 28px segments, each with icon and word, the chosen one on an ink
+ * surface. That surface slides to a new choice with the switch curve the
+ * theme and language switches use (a slight overshoot, 240 ms), and leans
+ * in while pressed. Until then the pill showed the active word only and
+ * stretched with the house curve.
+ *
+ * `modes` narrows the choice: a map opened from a spot (`toggle=0`) offers
+ * only Wind and Wellen (2026-11-25).
  */
-export default function ModeSwitch({ mode, onMode }: { mode: ExplorerMode; onMode: (mode: ExplorerMode) => void }) {
-  const trayRef = useRef<HTMLDivElement>(null);
-  const indicatorRef = useRef<HTMLSpanElement>(null);
-  useStretchIndicator(trayRef, indicatorRef, mode);
+export default function ModeSwitch({
+  mode,
+  onMode,
+  modes = ALL_MODES,
+}: {
+  mode: ExplorerMode;
+  onMode: (mode: ExplorerMode) => void;
+  modes?: ExplorerMode[];
+}) {
+  const options = MODES.filter((option) => modes.includes(option.mode));
+  const index = options.findIndex((option) => option.mode === mode);
 
   return (
-    <div ref={trayRef} className="swd-pm-modeswitch" role="group" aria-label="Kartenmodus">
-      <span ref={indicatorRef} className="swd-pm-mode-indicator" aria-hidden="true" />
-      {MODES.map(({ mode: key, label, Icon }) => (
-        <button key={key} type="button" className="swd-pm-mode" aria-pressed={mode === key} aria-label={label} onClick={() => onMode(key)}>
-          <Icon className="text-lead" />
-          <span className="swd-pm-mode-label text-ui">{label}</span>
+    <div className="swd-pm-modeswitch" role="group" aria-label="Kartenmodus">
+      <span
+        className="swd-pm-mode-indicator"
+        aria-hidden="true"
+        style={{ transform: `translateX(${Math.max(0, index) * 100}%)`, opacity: index < 0 ? 0 : 1 }}
+      />
+      {options.map(({ mode: key, label, Icon }) => (
+        <button key={key} type="button" className="swd-pm-mode" aria-pressed={mode === key} onClick={() => onMode(key)}>
+          <Icon />
+          <span className="text-caption">{label}</span>
         </button>
       ))}
     </div>
