@@ -535,8 +535,6 @@ test("Daten-Seite zeigt Meteogramm und Ausblick", async ({ page }) => {
   await expect(page.locator(".swd-today-low").first()).toHaveCSS("font-weight", "400");
   await expect(page.locator(".swd-today-low").first()).toHaveCSS("opacity", "1");
   // The complete 10-day outlook renders through the last hourly day.
-  await expect(page.getByText("SA 05.09", { exact: true })).toBeVisible();
-  await expect(page.getByText("MO 14.09", { exact: true })).toBeVisible();
   await expect(page.locator("#spot-meteogram-scroll [data-forecast-day]")).toHaveCount(10);
 });
 
@@ -548,9 +546,17 @@ test("Daten-Seite kennzeichnet den kostenlosen Meeresspiegel-Fallback eindeutig"
   const tide = page.getByRole("region", { name: "Gezeitenvorhersage" });
   await tide.scrollIntoViewIfNeeded();
   await expect(tide.getByRole("heading", { name: "Modellierter Meeresspiegel" })).toBeVisible();
-  await expect(tide.getByText("Aktueller Modellwert:")).toBeVisible();
-  await expect(tide.getByText(/Nicht zur Navigation/)).toBeVisible();
-  await expect(tide.getByRole("link", { name: "Quelle: Open-Meteo Marine" })).toBeVisible();
+  // One week as a plain chart; how the value is made (model, not for
+  // navigation, source) is explained on "Daten & Fragen", linked from here.
+  const curve = tide.getByRole("slider", { name: /Verlauf der nächsten 7 Tage/ });
+  await expect(curve).toBeVisible();
+  // Scrubbing: the arrow keys (like a finger along the curve) pick an hour,
+  // and its level is read out with the time.
+  await curve.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(curve).toHaveAttribute("aria-valuenow", "1");
+  await expect(curve).toHaveAttribute("aria-valuetext", /Uhr, /);
+  await expect(tide.getByRole("link", { name: "Wie entsteht der Wert?" })).toHaveAttribute("href", "/fragen");
 });
 
 test("Die Daten-Seite hat keine eigene Karte mehr, sondern führt auf die Wetterkarte", async ({ page }) => {
@@ -576,8 +582,11 @@ test("Die Daten-Seite hat keine eigene Karte mehr, sondern führt auf die Wetter
   // Rule); "toggle=0" was the retired map's switch-off and is ignored. The old
   // "no mode switch" check only passed when it ran before the lazy map mounted.
   // What matters is that the spot's entry lands in wind mode.
-  await expect(page.getByRole("group", { name: "Kartenmodus" }).getByRole("button", { name: "Wind" }))
-    .toHaveAttribute("aria-pressed", "true");
+  const modes = page.getByRole("group", { name: "Kartenmodus" });
+  await expect(modes.getByRole("button", { name: "Wind" })).toHaveAttribute("aria-pressed", "true");
+  // From a spot the map offers the weather only: Wind and Wellen, no Spots.
+  await expect(modes.getByRole("button", { name: "Wellen" })).toBeVisible();
+  await expect(modes.getByRole("button", { name: "Spots", exact: true })).toHaveCount(0);
 });
 
 test("Meteogramm zeigt Temperatur nur als Zahl ohne Balken", async ({ page }) => {
@@ -623,7 +632,9 @@ test("Info-Locator bleibt statisch und nutzt genau einen schlanken Forecast-Abru
   await expect(safetyCard.getByText("Wasser", { exact: true })).toBeVisible();
   await expect(safetyCard.getByText("18 °C", { exact: true })).toBeVisible();
   expect(liveRequests).toBe(0);
-  expect(forecastRequests).toBe(0);
+  // Since 2026-11-25 the Info tab warms the Daten tab's forecast once the
+  // page is idle ("Daten-Tab vorladen") — at most one request, never a poll.
+  expect(forecastRequests).toBeLessThanOrEqual(1);
   expect(forecastSummaryRequests).toBe(1);
 });
 
@@ -830,8 +841,6 @@ for (const width of [320, 375, 768, 1280, 1440]) {
     await mockApi(page);
     await page.goto("/spot/test/daten");
     await expect(page.getByRole("heading", { name: "Alcyons" })).toBeVisible();
-    const outlook = page.locator(".forecast-weather-grid");
-    await expect(outlook.getByRole("button")).toHaveCount(10);
     const navigator = page.getByRole("group", { name: "Tagesübersicht — Tag im Stundenforecast anzeigen" });
     await expect(navigator.getByRole("button")).toHaveCount(10);
     const navigatorMetrics = await navigator.evaluate((element) => ({
@@ -847,13 +856,6 @@ for (const width of [320, 375, 768, 1280, 1440]) {
       // and it doesn't widen the page (asserted below via the document overflow).
       expect(navigatorMetrics.clientWidth).toBeLessThanOrEqual(width);
     }
-    const [bodyEdgeBox, outlookBox] = await Promise.all([
-      page.locator("#spot-meteogramm").boundingBox(),
-      outlook.boundingBox(),
-    ]);
-    expect(bodyEdgeBox).not.toBeNull();
-    expect(outlookBox).not.toBeNull();
-    expect(Math.abs((bodyEdgeBox!.x + bodyEdgeBox!.width) - (outlookBox!.x + outlookBox!.width))).toBeLessThanOrEqual(1);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
   });
@@ -882,7 +884,7 @@ test("Tag zehn springt in seinen Stundenforecast", async ({ page }) => {
   await page.goto("/spot/test/daten");
 
   const navigator = page.getByRole("group", { name: "Tagesübersicht — Tag im Stundenforecast anzeigen" });
-  await navigator.getByRole("button", { name: /MO 14\.09/ }).click();
+  await navigator.getByRole("button", { name: /Mo 14\.09/i }).click();
 
   await expect(page.getByText(/Ausgewählt 2026-09-14 06:00/)).toBeAttached();
   await expect.poll(async () => page.locator("#spot-meteogram-scroll").evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
@@ -932,22 +934,21 @@ test("Beim Runterscrollen bleibt oben links ein Zurück-Pfeil, auf Info und Date
   await page.setViewportSize({ width: 390, height: 844 });
   for (const tab of ["info", "daten"] as const) {
     await page.goto(`/spot/test/${tab}`);
-    const pinned = page.locator("[data-scroll-back]");
-    await expect(page.locator("[data-page-back]")).toBeVisible();
-    // At the top the header's own arrow is on screen; the pinned copy stays out.
-    await expect(pinned).toHaveAttribute("aria-hidden", "true");
+    // One arrow (2026-11-25): it stands where the header puts it and simply
+    // stays there while the page scrolls — no second arrow sliding in.
+    const back = page.locator("[data-page-back]");
+    await expect(back).toHaveCount(1);
+    await expect(back).toBeVisible();
+    await expect(back).toHaveClass(/back-glyph-on-photo/);
+    const top = (await back.boundingBox())!;
     await page.mouse.wheel(0, 1200);
-    await expect(pinned).not.toHaveAttribute("aria-hidden", "true");
-    // The arrow slides in from the left edge (300ms); judge where it settles.
-    await expect
-      .poll(async () => {
-        const box = await pinned.boundingBox();
-        return Boolean(box && box.x >= 0 && box.x < 40 && box.y < 60 && box.width >= 44 && box.height >= 44);
-      })
-      .toBe(true);
-    if (process.env.SCROLL_BACK_SHOTS) { await page.waitForTimeout(800); await page.screenshot({ path: `${process.env.SCROLL_BACK_SHOTS}/spot-${tab}.png` }); }
+    await expect(back).toHaveClass(/back-glyph-disc/);
+    const scrolled = (await back.boundingBox())!;
+    expect(Math.round(scrolled.x)).toBe(Math.round(top.x));
+    expect(Math.round(scrolled.y)).toBe(Math.round(top.y));
+    expect(scrolled.width).toBeGreaterThanOrEqual(44);
   }
-  await page.locator("[data-scroll-back]").click();
+  await page.locator("[data-page-back]").click();
   await expect(page).toHaveURL(/\/$/);
 });
 
@@ -1023,4 +1024,38 @@ test("Antworten sind nur eingerückt, ohne Thread-Linie, und die Aktionszeile bl
       expect(row, `meta row at ${width}px`).toBeLessThanOrEqual(56);
     }
   }
+});
+
+test("Der Daten-Tab lässt sich für die Welle auslegen", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/spot/test/daten");
+  const focus = page.getByRole("group", { name: "Daten ausgelegt für" });
+  await expect(focus.getByRole("button", { name: "Wind" })).toHaveAttribute("aria-pressed", "true");
+  await focus.getByRole("button", { name: "Welle" }).click();
+  await expect(focus.getByRole("button", { name: "Welle" })).toHaveAttribute("aria-pressed", "true");
+  // The link carries the focus, and the meteogram leads with the sea.
+  await expect.poll(() => new URL(page.url()).searchParams.get("fokus")).toBe("welle");
+  const labels = page.locator("[data-meteogram-row-label]");
+  await expect(labels.first()).toHaveText("Welle");
+  await expect(labels.nth(1)).toHaveText("Periode");
+  await expect(page.getByRole("slider", { name: /Welle des Tages/ })).toBeVisible();
+  // Remembered for the next visit without the link.
+  await page.goto("/spot/test/daten");
+  await expect(page.getByRole("group", { name: "Daten ausgelegt für" }).getByRole("button", { name: "Welle" }))
+    .toHaveAttribute("aria-pressed", "true");
+});
+
+test("Ein Schalter, der in den Link schreibt, lässt die Seite an ihrer Stelle", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 700 });
+  await mockApi(page);
+  await page.goto("/spot/test/daten");
+  const focus = page.getByRole("group", { name: "Daten ausgelegt für" });
+  await expect(focus).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, 300));
+  await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(300);
+  await focus.getByRole("button", { name: "Welle" }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("fokus")).toBe("welle");
+  // Only the query changed: no jump to the top.
+  await page.waitForTimeout(400);
+  expect(await page.evaluate(() => Math.round(window.scrollY))).toBe(300);
 });

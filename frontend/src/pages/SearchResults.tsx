@@ -1,5 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import SpotTabs from "../components/SpotTabs";
+import RegionWindView from "../components/search/RegionWindView";
 import ResultsHeader from "../components/ResultsHeader";
 import Footer from "../components/Footer";
 import SpotCard from "../components/SpotCard";
@@ -257,6 +259,9 @@ export default function SearchResults() {
   const spotId = params.get("spot_id") ?? undefined;
   const regionId = params.get("region_id") ?? undefined;
   const mode = params.get("mode"); // "weeks" → the temporal best-weeks list
+  // Results view (chosen 2026-11-24): the tiles as before, or the hits grouped
+  // by region with their wind months. Kept in the URL so it can be shared.
+  const view = params.get("view") === "regionen" ? "regionen" : "uebersicht";
   const originParam = params.get("origin");
 
   const eventKey = params.toString();
@@ -405,6 +410,32 @@ export default function SearchResults() {
   const { data: liveData } = useSpotsLive(liveIds);
   const live = liveData ?? undefined;
 
+  // Both views list the same spots: direct hits first, then the comparable ones.
+  const viewSpots = useMemo(() => {
+    const seen = new Set<string>();
+    return [...directSpots, ...similar].filter((spot) => (seen.has(spot.id) ? false : (seen.add(spot.id), true)));
+  }, [directSpots, similar]);
+  const viewTabs = useMemo(() => {
+    const left = new URLSearchParams(params);
+    left.delete("view");
+    const right = new URLSearchParams(params);
+    right.set("view", "regionen");
+    return [
+      { id: "uebersicht", label: "Übersicht", href: `/search?${left.toString()}` },
+      { id: "regionen", label: "Nach Region", href: `/search?${right.toString()}` },
+    ];
+  }, [params]);
+  // The month the wind strips outline: the searched one, else the month of
+  // the searched dates or weeks, else the current month.
+  const focusMonth = useMemo(() => {
+    if (month && Number(month) >= 1 && Number(month) <= 12) return Number(month);
+    const from = params.get("from");
+    if (from && /^\d{4}-\d{2}/.test(from)) return Number(from.slice(5, 7));
+    const firstWeek = Number((weeks ?? week ?? "").split("-")[0]);
+    if (firstWeek >= 1 && firstWeek <= 53) return Math.min(12, Math.floor(((firstWeek - 1) * 12) / 52) + 1);
+    return new Date().getMonth() + 1;
+  }, [month, params, weeks, week]);
+
   const directRegions = useMemo(
     () =>
       (result?.regionen ?? []).map((r) => {
@@ -466,7 +497,18 @@ export default function SearchResults() {
           </div>
         )}
 
-        {!pageLoading && !criticalError && (discovery || showBestRegions || showSearch) && (
+        {!pageLoading && !criticalError && showSearch && viewSpots.length > 0 && (
+          <SpotTabs tabs={viewTabs} activeId={view} label="Ergebnis-Ansicht" className="pb-4" />
+        )}
+
+        {!pageLoading && !criticalError && showSearch && view === "regionen" && viewSpots.length > 0 && (
+          <div className={RESULTS_COLUMN}>
+            <ResultHead heading={heading} />
+            <RegionWindView spots={viewSpots} month={focusMonth} />
+          </div>
+        )}
+
+        {!pageLoading && !criticalError && (discovery || showBestRegions || showSearch) && !(showSearch && view === "regionen" && viewSpots.length > 0) && (
           <ResultsLayout frame={mapFrame} head={<ResultHead heading={heading} />}>
             {originsMixed && (
               <OriginFacet active={originFilter} onChange={setOriginFilter} />

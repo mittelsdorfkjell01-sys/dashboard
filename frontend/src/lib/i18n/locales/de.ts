@@ -185,7 +185,7 @@ export const de = {
       tides: {
         q: "Gezeiten: Für welchen Ort und in welcher Zeit?",
         p1: "Die Gezeiten werden für einen Modellpunkt an der Küste nahe dem Spot berechnet, nicht für deinen genauen Einstieg. In Buchten, Flussmündungen und hinter Inseln können Zeiten und Hub deutlich abweichen. Neben der Überschrift steht, wie gut der Punkt abgesichert ist: „Modell“, „Geprüfter Modellpunkt“, „Lokal kalibriert“ oder „Messstation-kalibriert“.",
-        p2: "Alle Zeiten stehen in der Ortszeit des Spots, nicht in der Zeitzone deines Geräts. Hoch- und Niedrigwasser sind ungefähr: Sie stehen mit „ca.“ oder als Zeitspanne da.",
+        p2: "Der Verlauf auf der Spot-Seite zeigt die nächsten sieben Tage in der Ortszeit des Spots, nicht in der Zeitzone deines Geräts. Hoch- und Niedrigwasser liegen auf der Kurve nur ungefähr; je nach Modellpunkt kann der Zeitpunkt um eine halbe bis anderthalb Stunden abweichen.",
         p3: "Die astronomische Tide zeigt den relativen Verlauf des Wasserstands, keine absolute Wassertiefe. Wetter, Sturmflut, Abfluss und Strömung sind darin nicht enthalten. Steht dort „Modellierter Meeresspiegel“, sind Wetteranteile enthalten, nahe der Küste ist der Wert aber ungenauer. Beides ist nicht zur Navigation oder als Sturmflutwarnung gedacht.",
         p4: "„Momentan nicht verfügbar“ heißt: Für diesen Spot liegt keine belastbare Gezeitenberechnung vor. Das sagt nichts darüber, ob es dort Tide gibt.",
       },

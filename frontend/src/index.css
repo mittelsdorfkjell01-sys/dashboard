@@ -77,7 +77,6 @@
   --sw-ease: cubic-bezier(0.22, 1, 0.36, 1);
   /* Ground of the always-dark Daten instrument (daten-theme.css). Declared
      here so the spot page can cross-fade to it before that page is loaded. */
-  --sw-daten-page: #0A0C0E;
   --sw-dur-fast: 150ms;
   --sw-dur-base: 200ms;
   --sw-dur-slow: 300ms;
@@ -306,7 +305,12 @@ html { -webkit-tap-highlight-color: transparent; }
     border-radius: 9999px;
     background: var(--sw-page);
     filter: blur(6px);
+    transition: opacity var(--sw-dur-fast) var(--sw-ease);
   }
+  /* The spot page's arrow once content runs under it (2026-11-25): a
+     hard-edged disc in the page colour — no blur, no shadow, no fade — so
+     it reads as a round mark on text in both themes instead of a smudge. */
+  .back-glyph-disc::before { inset: 0.25rem; filter: none; }
   .back-glyph-on-photo {
     color: #fff;
     filter: drop-shadow(0 1px 2px rgba(14, 17, 20, 0.55)) drop-shadow(0 0 6px rgba(14, 17, 20, 0.35));
@@ -787,7 +791,8 @@ html { -webkit-tap-highlight-color: transparent; }
 [data-scroll-back] {
   transition: opacity var(--sw-dur-fast) var(--sw-ease), translate var(--sw-dur-slow) var(--sw-ease);
 }
-[data-scroll-back][aria-hidden="true"] { translate: -20px 0; }
+/* 2026-11-25: no slide from the edge any more — a back arrow that "comes in"
+   read as a second control. It only fades. */
 .swd-pill-rise { animation: swd-pill-rise var(--sw-dur-slow) var(--sw-ease) both; }
 @keyframes swd-pill-rise {
   from { opacity: 0; translate: 0 28px; }
@@ -808,4 +813,34 @@ html { -webkit-tap-highlight-color: transparent; }
 }
 @media (prefers-reduced-motion: reduce) {
   .swd-view-in { animation-name: fade; }
+}
+
+/* Daten tab smoothness (chosen 2026-11-25).
+   - swd-fade-in: a section that replaces its same-size placeholder fades in
+     (200 ms), so nothing moves when the data arrives.
+   - swd-soft-swap: a reading that changes with the selection (gust, wave,
+     condition, high/low) blends softly into its new value instead of
+     snapping; only the big wind number rolls.
+   - swd-breathe: the tide's "now" point sends out a quiet ring; still under
+     reduced motion.
+   - Meteogram snap: on touch, a swipe settles at a day start (proximity, so
+     a short swipe still stops where the finger left it). */
+.swd-fade-in { animation: fade var(--sw-dur-base) var(--sw-ease) both; }
+.swd-soft-swap { animation: swd-soft-swap var(--sw-dur-slow) var(--sw-ease) both; }
+@keyframes swd-soft-swap {
+  from { opacity: 0.2; filter: blur(1.5px); }
+  to { opacity: 1; filter: blur(0); }
+}
+.swd-breathe { animation: swd-breathe 1.8s var(--sw-ease) infinite; }
+@keyframes swd-breathe {
+  0% { opacity: 0.55; scale: 1; }
+  70%, 100% { opacity: 0; scale: 3; }
+}
+@media (pointer: coarse) {
+  #spot-meteogram-scroll { scroll-snap-type: x proximity; }
+  #spot-meteogram-scroll [data-forecast-day][data-snap] { scroll-snap-align: start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .swd-soft-swap { animation-name: fade; }
+  .swd-breathe { animation: none; opacity: 0; }
 }

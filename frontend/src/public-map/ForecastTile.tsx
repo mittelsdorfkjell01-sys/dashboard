@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRightIcon, CloseIcon, WaveIcon, WindIcon } from "../lib/icons";
 import { windValue, waveValue, type WaveUnit, type WindUnit } from "../lib/units";
-import { css, windRgb } from "./fieldColors";
+import { directionName } from "../lib/spotConditionHints";
+import { css, waveRgb, windRgb } from "./fieldColors";
 import { CalmMark, TravelArrow } from "./TravelArrow";
 import { CALM_KN } from "./ArrowLayer";
 
@@ -24,6 +25,16 @@ export interface TileHour {
   wave?: number | null;
   period?: number | null;
   waveFrom?: number | null;
+}
+
+// Row key for the wave layout: a wave crest over a span (the period).
+function PeriodIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" aria-hidden="true" className={className}>
+      <path d="M3 11c2.5-6 5.5-6 9 0s6.5 6 9 0" />
+      <path d="M3 19h18M3 17v4M21 17v4" />
+    </svg>
+  );
 }
 
 /**
@@ -53,6 +64,7 @@ export default function ForecastTile({
   place,
   source,
   onClose,
+  focus = "wind",
 }: {
   hours: number[];
   value?: number;
@@ -72,6 +84,10 @@ export default function ForecastTile({
   /** Model and run behind the forecast, always shown with it. */
   source?: string;
   onClose?: () => void;
+  /** The wave map lays the strip out for the sea (2026-11-25, like the Daten
+   *  tab's wave focus): wave bar, height, direction and period on top, the
+   *  wind below as a number with its arrow. */
+  focus?: "wind" | "wave";
 }) {
   const strip = useRef<HTMLDivElement>(null);
   const userUntil = useRef(0);
@@ -141,17 +157,41 @@ export default function ForecastTile({
   };
 
   const scale = useMemo(() => {
-    let wind = 10, hasWave = false;
+    let wind = 10, wave = 1, hasWave = false;
     for (const hour of forecast?.values() ?? []) {
       wind = Math.max(wind, hour.gust ?? 0, hour.wind ?? 0);
-      if (hour.wave != null) hasWave = true;
+      if (hour.wave != null) { hasWave = true; wave = Math.max(wave, hour.wave); }
     }
-    return { wind, hasWave };
+    return { wind, wave, hasWave };
   }, [forecast]);
+  // Without any wave reading the sea layout would be empty rows.
+  const waveFocus = focus === "wave" && scale.hasWave;
   const isNow = value !== undefined && nowAt !== undefined && Math.abs(value - nowAt) < 31 * 60_000;
 
+  if (forecast) {
+    return (
+      <ForecastMeteogram
+        hours={hours}
+        value={value}
+        isNow={isNow}
+        onChange={onChange}
+        forecast={forecast}
+        loading={loading}
+        windUnit={windUnit}
+        waveUnit={waveUnit}
+        spotHref={spotHref}
+        spotName={spotName}
+        place={place}
+        source={source}
+        onClose={onClose}
+        waveFocus={waveFocus}
+        scale={scale}
+      />
+    );
+  }
+
   return (
-    <section className={`swd-pm-tile${forecast ? " has-forecast" : ""}`} aria-label={forecast ? "Vorhersage und Zeit" : "Zeit"}>
+    <section className="swd-pm-tile" aria-label="Zeit">
       <div className="swd-pm-tile-head">
         <p className="min-w-0 flex-1 truncate">
           {value !== undefined && <span className="font-num text-caption tabular-nums text-ink">{timeLabel(value)}</span>}
@@ -193,50 +233,233 @@ export default function ForecastTile({
           <span className="swd-pm-tile-pad" />
           {hours.map((hour) => {
             const h = new Date(hour).getHours();
-            const data = forecast?.get(hour);
             const label = h === 0 ? weekday(hour) : h % 3 === 0 ? String(h).padStart(2, "0") : "";
             return (
               <span key={hour} className={`swd-pm-tile-col${h === 0 ? " is-midnight" : ""}${nowAt !== undefined && Math.abs(hour - nowAt) < 31 * 60_000 ? " is-now" : ""}`}>
                 <span className={`font-num text-micro ${h === 0 ? "font-bold text-ink" : "text-muted"}`}>{label}</span>
-                {forecast && (
-                  <>
-                    <span className="swd-pm-tile-bars">
-                      {data?.wind != null && (
-                        <>
-                          {data.gust != null && data.gust > data.wind && <span className="swd-pm-tile-gust" style={{ height: 3 + (data.gust / scale.wind) * 25, background: css(windRgb(data.wind)) }} />}
-                          <span className="swd-pm-tile-bar" style={{ height: 3 + (data.wind / scale.wind) * 25, background: css(windRgb(data.wind)) }} />
-                        </>
-                      )}
-                    </span>
-                    <span className="font-num text-micro font-semibold text-ink">{data?.wind != null && h % 2 === 0 ? windValue(data.wind, windUnit) : ""}</span>
-                    <span className="swd-pm-tile-dir">
-                      {data?.wind != null && data.windFrom != null && (data.wind < CALM_KN ? <CalmMark size={10} className="text-muted" /> : <TravelArrow bearing={(data.windFrom + 180) % 360} size={11} className="text-ink-soft" />)}
-                    </span>
-                    {scale.hasWave && (
-                      <>
-                        <span className="font-num text-micro text-ink">{data?.wave != null && h % 2 === 0 ? waveValue(data.wave, waveUnit) : ""}</span>
-                        <span className="swd-pm-tile-dir">
-                          {data?.wave != null && data.waveFrom != null && <TravelArrow bearing={(data.waveFrom + 180) % 360} size={11} className="text-ink-soft" />}
-                        </span>
-                      </>
-                    )}
-                  </>
-                )}
-                {!forecast && <span className="swd-pm-tile-tick" aria-hidden="true" />}
+                <span className="swd-pm-tile-tick" aria-hidden="true" />
               </span>
             );
           })}
           <span className="swd-pm-tile-pad" />
         </div>
         <span className="swd-pm-tile-needle" aria-hidden="true" />
-        {forecast && (
-          <span className="swd-pm-tile-legend" aria-hidden="true">
-            <WindIcon className="swd-pm-tile-legend-wind" />
-            {scale.hasWave && <WaveIcon className="swd-pm-tile-legend-wave" />}
-          </span>
+      </div>
+    </section>
+  );
+}
+
+// ── Forecast as a meteogram (chosen 2026-11-25, "A · Meteogramm wie auf Daten") ──
+
+type Row = { key: string; h: number; icon: React.ReactNode; label: string; cell: (data: TileHour | undefined, hour: number) => React.ReactNode };
+
+/**
+ * With a place selected the tile is the Daten tab's meteogram in small: row
+ * symbols pinned left, one column per hour, the chosen hour tinted and its
+ * readings spelled out in the head. A tap (or a mouse drag) on a column picks
+ * the hour and the map follows; swiping and the wheel only page through the
+ * hours. The wind map leads with the wind, the wave map with the sea (height,
+ * period, direction), the other reading small underneath — the same order as
+ * the Daten tab's wind and wave focus.
+ */
+function ForecastMeteogram({
+  hours,
+  value,
+  isNow,
+  onChange,
+  forecast,
+  loading,
+  windUnit,
+  waveUnit,
+  spotHref,
+  spotName,
+  place,
+  source,
+  onClose,
+  waveFocus,
+  scale,
+}: {
+  hours: number[];
+  value?: number;
+  isNow: boolean;
+  onChange: (at: number, how: { scrub: boolean }) => void;
+  forecast: Map<number, TileHour>;
+  loading?: boolean;
+  windUnit: WindUnit;
+  waveUnit: WaveUnit;
+  spotHref?: string;
+  spotName?: string;
+  place?: string;
+  source?: string;
+  onClose?: () => void;
+  waveFocus: boolean;
+  scale: { wind: number; wave: number; hasWave: boolean };
+}) {
+  const strip = useRef<HTMLDivElement>(null);
+  const cols = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+  const pointerType = useRef<string>("mouse");
+  const first = hours[0] ?? 0;
+  const index = value === undefined ? -1 : Math.max(0, Math.min(hours.length - 1, Math.round((value - first) / HOUR_MS)));
+  const selected = index >= 0 ? forecast.get(hours[index]) : undefined;
+
+  // Keep the chosen hour in view: on opening it sits a third in from the left;
+  // later only when it would leave the visible part (play, a tap on the map).
+  const placed = useRef(false);
+  useEffect(() => {
+    const element = strip.current;
+    if (!element || index < 0) return;
+    const x = index * COLUMN_PX;
+    const visible = x >= element.scrollLeft + 24 && x + COLUMN_PX <= element.scrollLeft + element.clientWidth;
+    if (placed.current && visible) return;
+    placed.current = true;
+    element.scrollTo({ left: Math.max(0, x - element.clientWidth / 3), behavior: "auto" });
+  }, [index]);
+
+  // A plain vertical wheel pages sideways (a mouse cannot pan by itself).
+  useEffect(() => {
+    const element = strip.current;
+    if (!element) return;
+    const onWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+      event.preventDefault();
+      element.scrollLeft += event.deltaY;
+    };
+    element.addEventListener("wheel", onWheel, { passive: false });
+    return () => element.removeEventListener("wheel", onWheel);
+  }, []);
+
+  const pickAt = (clientX: number) => {
+    const box = cols.current?.getBoundingClientRect();
+    if (!box || !hours.length) return;
+    const i = Math.max(0, Math.min(hours.length - 1, Math.floor((clientX - box.left) / COLUMN_PX)));
+    if (i !== index) onChange(hours[i], { scrub: true });
+  };
+
+  const windArrow = (data?: TileHour) => data?.wind != null && data.windFrom != null
+    ? (data.wind < CALM_KN ? <CalmMark size={10} className="text-muted" /> : <TravelArrow bearing={(data.windFrom + 180) % 360} size={11} className="text-ink-soft" />)
+    : null;
+  const waveArrow = (data?: TileHour) => data?.wave != null && data.waveFrom != null
+    ? <TravelArrow bearing={(data.waveFrom + 180) % 360} size={11} className="text-ink-soft" />
+    : null;
+  const windBars = (data?: TileHour) => data?.wind != null && (
+    <>
+      {data.gust != null && data.gust > data.wind && <span className="swd-pm-tile-gust" style={{ height: 3 + (data.gust / scale.wind) * 25, background: css(windRgb(data.wind)) }} />}
+      <span className="swd-pm-tile-bar" style={{ height: 3 + (data.wind / scale.wind) * 25, background: css(windRgb(data.wind)) }} />
+    </>
+  );
+  const waveBar = (data?: TileHour) => data?.wave != null && (
+    <span className="swd-pm-tile-bar" style={{ height: 3 + (data.wave / scale.wave) * 25, background: css(waveRgb(data.wave)) }} />
+  );
+
+  const windRows: Row[] = [
+    { key: "wind", h: 30, icon: <WindIcon />, label: "Wind", cell: (d) => <span className="swd-pm-tile-bars">{windBars(d)}</span> },
+    { key: "wind-v", h: 13, icon: null, label: "Wind in Knoten", cell: (d) => <span className="font-num text-micro font-semibold text-ink">{d?.wind != null ? windValue(d.wind, windUnit) : ""}</span> },
+    { key: "wind-d", h: 14, icon: null, label: "Windrichtung", cell: (d) => windArrow(d) },
+    ...(scale.hasWave ? [
+      // Height over period: the same total height as the wave layout, so
+      // switching Wind ↔ Wellen never resizes the tile (2026-11-25).
+      { key: "wave-v", h: 28, icon: <WaveIcon />, label: "Welle", cell: (d: TileHour | undefined) => (
+        <span className="flex flex-col items-center leading-none">
+          <span className="font-num text-micro text-ink" style={{ height: 13 }}>{d?.wave != null ? waveValue(d.wave, waveUnit) : ""}</span>
+          <span className="font-num text-micro text-muted" style={{ height: 13 }}>{d?.period != null ? `${Math.round(d.period)}s` : ""}</span>
+        </span>
+      ) },
+      { key: "wave-d", h: 14, icon: null, label: "Wellenrichtung", cell: (d: TileHour | undefined) => waveArrow(d) },
+    ] : []),
+  ];
+  const waveRows: Row[] = [
+    { key: "wave", h: 30, icon: <WaveIcon />, label: "Welle", cell: (d) => <span className="swd-pm-tile-bars">{waveBar(d)}</span> },
+    { key: "wave-v", h: 13, icon: null, label: "Wellenhöhe", cell: (d) => <span className="font-num text-micro font-semibold text-ink">{d?.wave != null ? waveValue(d.wave, waveUnit) : ""}</span> },
+    { key: "period", h: 13, icon: <PeriodIcon />, label: "Periode", cell: (d) => <span className="font-num text-micro text-muted">{d?.period != null ? `${Math.round(d.period)}s` : ""}</span> },
+    { key: "wave-d", h: 14, icon: null, label: "Wellenrichtung", cell: (d) => waveArrow(d) },
+    { key: "wind-v", h: 13, icon: <WindIcon />, label: "Wind", cell: (d) => <span className="font-num text-micro text-ink">{d?.wind != null ? windValue(d.wind, windUnit) : ""}</span> },
+    { key: "wind-d", h: 14, icon: null, label: "Windrichtung", cell: (d) => windArrow(d) },
+  ];
+  const rows = waveFocus ? waveRows : windRows;
+
+  // The chosen hour, spelled out — the map's reading first.
+  const windText = selected?.wind != null
+    ? `${windValue(selected.wind, windUnit)} kn${selected.gust != null ? ` · Böen ${windValue(selected.gust, windUnit)}` : ""}${selected.windFrom != null ? ` · aus ${directionName(selected.windFrom)}` : ""}`
+    : null;
+  const waveText = selected?.wave != null
+    ? `${waveValue(selected.wave, waveUnit)} m${selected.period != null ? ` · ${Math.round(selected.period)} s` : ""}${selected.waveFrom != null ? ` · aus ${directionName(selected.waveFrom)}` : ""}`
+    : null;
+  const reading = (waveFocus ? [waveText && `Welle ${waveText}`, windText && `Wind ${windText}`] : [windText && `Wind ${windText}`, waveText && `Welle ${waveText}`])
+    .filter(Boolean).join("  ·  ");
+
+  return (
+    <section className="swd-pm-tile has-forecast" aria-label="Vorhersage und Zeit">
+      <div className="swd-pm-tile-head">
+        <p className="min-w-0 flex-1 truncate">
+          {value !== undefined && <span className="font-num text-caption tabular-nums text-ink">{timeLabel(value)}</span>}
+          {isNow && <span className="ml-2 text-caption text-accent">Jetzt</span>}
+          {loading && <span className="ml-2 text-caption text-muted">Vorhersage lädt …</span>}
+        </p>
+        {!spotHref && place && <span className="swd-pm-tile-spot truncate text-caption text-ink">{place}</span>}
+        {spotHref && (
+          <Link to={spotHref} className="swd-pm-bar-link text-caption font-medium text-accent" aria-label={spotName ? `Zum Spot ${spotName}, Daten` : "Zum Spot, Daten"}>
+            {spotName && <span className="swd-pm-tile-spot truncate text-ink">{spotName}</span>}
+            <span>Zum Spot</span>
+            <ChevronRightIcon className="text-ui" />
+          </Link>
+        )}
+        {onClose && (
+          <button type="button" className="swd-pm-close" aria-label="Vorhersage schließen" onClick={onClose}>
+            <CloseIcon className="text-ui" />
+          </button>
         )}
       </div>
-      {forecast && source && <p className="swd-pm-tile-source truncate text-micro text-muted" title={source}>{source}</p>}
+      <p className="swd-pm-tile-read truncate font-num text-micro tabular-nums text-muted" role="status">{reading || " "}</p>
+      <div
+        ref={strip}
+        className="swd-pm-tile-strip swd-pm-meteo no-scrollbar"
+        tabIndex={0}
+        aria-label="Stunde wählen"
+        onKeyDown={(event) => {
+          if (index < 0) return;
+          if (event.key === "ArrowRight" && index < hours.length - 1) { event.preventDefault(); onChange(hours[index + 1], { scrub: false }); }
+          if (event.key === "ArrowLeft" && index > 0) { event.preventDefault(); onChange(hours[index - 1], { scrub: false }); }
+        }}
+      >
+        {/* Row symbols, pinned left while the hours page underneath. */}
+        <div className="swd-pm-meteo-labels" aria-hidden="true">
+          <span style={{ height: 13 }} />
+          {rows.map((row) => <span key={row.key} style={{ height: row.h }}>{row.icon}</span>)}
+        </div>
+        <div
+          ref={cols}
+          className="swd-pm-meteo-cols"
+          onPointerDown={(event) => {
+            pointerType.current = event.pointerType;
+            if (event.pointerType !== "mouse" || event.button !== 0) return;
+            dragging.current = true;
+            event.currentTarget.setPointerCapture(event.pointerId);
+            pickAt(event.clientX);
+          }}
+          onPointerMove={(event) => { if (dragging.current) pickAt(event.clientX); }}
+          onPointerUp={() => { dragging.current = false; }}
+          onPointerCancel={() => { dragging.current = false; }}
+          // A finger taps to pick; a swipe pans natively and picks nothing.
+          onClick={(event) => { if (pointerType.current !== "mouse") pickAt(event.clientX); }}
+        >
+          {index >= 0 && <span className="swd-pm-meteo-sel" style={{ transform: `translateX(${index * COLUMN_PX}px)` }} aria-hidden="true" />}
+          {hours.map((hour) => {
+            const h = new Date(hour).getHours();
+            const data = forecast.get(hour);
+            const label = h === 0 ? weekday(hour) : h % 3 === 0 ? String(h).padStart(2, "0") : "";
+            return (
+              <span key={hour} className={`swd-pm-tile-col${h === 0 ? " is-midnight" : ""}`}>
+                <span className={`font-num text-micro ${h === 0 ? "font-bold text-ink" : "text-muted"}`} style={{ height: 13 }}>{label}</span>
+                {rows.map((row) => (
+                  <span key={row.key} className="swd-pm-meteo-cell" style={{ height: row.h }}>{row.cell(data, hour)}</span>
+                ))}
+              </span>
+            );
+          })}
+        </div>
+      </div>
+      {source && <p className="swd-pm-tile-source truncate text-micro text-muted" title={source}>{source}</p>}
     </section>
   );
 }

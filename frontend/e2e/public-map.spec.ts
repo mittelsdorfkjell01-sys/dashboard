@@ -88,15 +88,16 @@ test("on the Spots map a spot shows only name, region and the way to the spot", 
   await shot(page, "spots-bar");
 });
 
-test("on the wind map a spot puts \"Zum Spot\" (Daten) into the slider, and swiping moves the clock", async ({ page }) => {
+test("on the wind map a spot puts \"Zum Spot\" (Daten) into the tile, and a tap on an hour moves the clock", async ({ page }) => {
   await open(page, "mode=wind&lat=54&lon=10&z=9");
   await page.getByRole("button", { name: "Spot A" }).click();
   await expect(page.locator(".swd-pm-bar")).toHaveCount(0);
-  const tile = page.getByRole("region", { name: "Zeit" });
+  // With a forecast the tile is the small meteogram (2026-11-25, variant A).
+  const tile = page.getByRole("region", { name: "Vorhersage und Zeit" });
   await expect(tile.getByRole("link", { name: /Zum Spot/ })).toHaveAttribute("href", /daten/);
   const before = await tile.locator(".swd-pm-tile-head p").innerText();
-  await tile.locator(".swd-pm-tile-strip").hover();
-  await page.mouse.wheel(30 * 4, 0);
+  const chosen = (await tile.locator(".swd-pm-meteo-sel").boundingBox())!;
+  await page.mouse.click(chosen.x + chosen.width / 2 + 3 * 30, chosen.y + 30);
   await expect(tile.locator(".swd-pm-tile-head p")).not.toHaveText(before);
   await shot(page, "wind-spot");
 });
@@ -155,23 +156,25 @@ test("a tap on the wind or wave map opens that point's forecast in the time stri
   await shot(page, "waves-point");
 });
 
-test("the forecast strip scrolls with a mouse drag and a plain wheel, and the clock follows", async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name.includes("mobile"), "mouse only; touch pans natively");
+test("in the forecast tile a mouse drag picks the hour and the wheel only pages", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.includes("mobile"), "mouse only; touch taps and pans natively");
   await open(page, "mode=wind&lat=54&lon=5&z=8", true);
   await page.mouse.click(400, 300);
-  const strip = page.locator(".swd-pm-tile-strip");
-  const head = page.locator(".swd-pm-tile-head p");
-  const box = (await strip.boundingBox())!;
-  const y = box.y + box.height / 2;
-  const start = await strip.evaluate((element) => element.scrollLeft);
+  const tile = page.getByRole("region", { name: "Vorhersage und Zeit" });
+  const strip = tile.locator(".swd-pm-meteo");
+  const head = tile.locator(".swd-pm-tile-head p");
+  const chosen = (await tile.locator(".swd-pm-meteo-sel").boundingBox())!;
+  const y = chosen.y + 30;
   const before = await head.innerText();
-  await page.mouse.move(box.x + box.width / 2 + 100, y);
+  await page.mouse.move(chosen.x + chosen.width / 2, y);
   await page.mouse.down();
-  await page.mouse.move(box.x + box.width / 2 - 50, y, { steps: 8 });
+  await page.mouse.move(chosen.x + chosen.width / 2 + 4 * 30, y, { steps: 8 });
   await page.mouse.up();
-  await expect.poll(() => strip.evaluate((element) => element.scrollLeft)).toBeGreaterThan(start + 100);
   await expect(head).not.toHaveText(before);
-  const dragged = await strip.evaluate((element) => element.scrollLeft);
+  // The wheel pages through the hours without touching the clock.
+  const picked = await head.innerText();
+  const start = await strip.evaluate((element) => element.scrollLeft);
   await page.mouse.wheel(0, 120);
-  await expect.poll(() => strip.evaluate((element) => element.scrollLeft)).toBeGreaterThan(dragged + 60);
+  await expect.poll(() => strip.evaluate((element) => element.scrollLeft)).toBeGreaterThan(start + 60);
+  await expect(head).toHaveText(picked);
 });

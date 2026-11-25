@@ -25,7 +25,7 @@ import { ArrowLayer, type ArrowTransition } from "./ArrowLayer";
 import { FieldLayer } from "./FieldLayer";
 import { ParticleLayer } from "./ParticleLayer";
 import ForecastTile, { type TileHour } from "./ForecastTile";
-import { headlineWaveM } from "../lib/waveReading";
+import { headlineWaveFromDeg, headlineWaveM, headlineWavePeriodS } from "../lib/waveReading";
 import { usePointForecast } from "./pointForecast";
 import { applyGround, applyNames, groundStyle, namesStyle, showCoastline, waterMaskStyle } from "./mapStyle";
 import { useSiteTheme } from "../lib/theme";
@@ -110,6 +110,7 @@ export default function PublicMap() {
   const themeRef = useRef(theme);
   themeRef.current = theme;
   const initialUrl = useRef(parseFieldUrlState(window.location.search));
+  const weatherOnly = useRef(new URLSearchParams(window.location.search).get("toggle") === "0").current;
   const hasUrlCamera = useRef(new URLSearchParams(window.location.search).has("lat"));
   const initialSpot = useRef(new URLSearchParams(window.location.search).get("spot") ?? undefined);
 
@@ -444,8 +445,9 @@ export default function PublicMap() {
     for (const day of tileForecast.days) for (const hour of day.hours) {
       const at = Date.parse(hour.utcKey);
       if (at % HOUR_MS !== 0) continue;
-      const waveFrom = hour.waves?.primary_swell?.mean_direction_from_deg ?? hour.waves?.total_wave?.mean_direction_from_deg ?? hour.swell_dir;
-      byHour.set(at, { wind: hour.wind, gust: hour.gust, windFrom: hour.dir, wave: headlineWaveM(hour), period: hour.period, waveFrom });
+      // Same readings as the Daten tab (lib/waveReading): the total wave's
+      // height, period and direction, never borrowed from a partition.
+      byHour.set(at, { wind: hour.wind, gust: hour.gust, windFrom: hour.dir, wave: headlineWaveM(hour), period: headlineWavePeriodS(hour), waveFrom: headlineWaveFromDeg(hour) });
     }
     return byHour.size ? byHour : undefined;
   }, [tileForecast]);
@@ -531,7 +533,8 @@ export default function PublicMap() {
       })()}
 
       <button type="button" className="swd-pm-glyph swd-pm-back" aria-label="Zurück" onClick={goBack}><ChevronLeftIcon className="text-title" /></button>
-      <ModeSwitch mode={mode} onMode={setMode} />
+      {/* A map opened from a spot (`toggle=0`) offers the weather only. */}
+      <ModeSwitch mode={mode} onMode={setMode} modes={weatherOnly ? ["wind", "waves"] : undefined} />
 
       <div className="swd-pm-glyphs">
         <div className="swd-pm-search"><Header whereOnly onResolve={resolvePlace} /></div>
@@ -650,6 +653,7 @@ export default function PublicMap() {
             onClose={selection ? () => setSelection(null) : undefined}
             windUnit={units.wind}
             waveUnit={units.wave}
+            focus={mode === "waves" ? "wave" : "wind"}
           />
         )}
       </div>

@@ -2,15 +2,16 @@ import { Component, lazy, Suspense, useEffect, useRef, useState, type CSSPropert
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import LandingHeader from "../components/LandingHeader";
-import ScrollBackButton from "../components/ScrollBackButton";
+import { PinnedPageBack } from "../components/ScrollBackButton";
 import SpotTabs from "../components/SpotTabs";
 import DatenPage from "../components/data/daten/DatenPage";
+import SpotTitle from "../components/SpotTitle";
 import SpotGalleryTile from "../components/SpotGalleryTile";
 import PhotoGalleryOverlay from "../components/PhotoGalleryOverlay";
 import SpotCommentBox from "../components/SpotCommentBox";
 import Footer from "../components/Footer";
 import SimilarSpots from "../components/SimilarSpots";
-import SpotOriginMark, { SpotOriginLine } from "../components/SpotOriginMark";
+import { SpotOriginLine } from "../components/SpotOriginMark";
 import SpotProfileCard from "../components/SpotProfileCard";
 import SpotActions from "../components/SpotActions";
 import SpotDescription from "../components/SpotDescription";
@@ -18,11 +19,10 @@ import SpotConditionHints from "../components/SpotConditionHints";
 import SpotEditorialClassification from "../components/SpotEditorialClassification";
 import { EditorialHero, SectionBand } from "../components/editorial";
 import { ErrorBanner } from "../components/AsyncStates";
-import { ChevronDownIcon, CheckCircleIcon } from "../lib/icons";
+import { CheckCircleIcon } from "../lib/icons";
 import { sportLabel } from "../lib/labels";
-import { regionSlug } from "../lib/types";
 import { sortFeed } from "../lib/communityFeed";
-import { useSpot, useSpotLive, useSpotForecast, useSpotForecastSummary, useSpotBestSeason } from "../lib/hooks";
+import { useSpot, useSpotLive, useSpotForecast, useSpotForecastSummary, useSpotBestSeason, prefetchSpotForecast } from "../lib/hooks";
 import { useCommunityFeed } from "../lib/communityHooks";
 import { facilitiesFromMap } from "../lib/spotView";
 import { mapLinkProps } from "../lib/mapLinks";
@@ -67,6 +67,18 @@ export default function SpotDetail() {
     useSpotForecast(activeTab === "daten" ? spotId : undefined);
   const { posts, photos, loading: commentsLoading, error: commentsError, reload: reloadFeed, addTip, removeTip, replaceTip } =
     useCommunityFeed(activeTab === "info" ? spotId : undefined);
+  // On the Info tab, fetch the Daten tab's forecast once the page is idle, so
+  // the switch to "Daten" needs no wait.
+  useEffect(() => {
+    if (activeTab !== "info" || !spotId) return;
+    const run = () => prefetchSpotForecast(spotId);
+    if (typeof window.requestIdleCallback === "function") {
+      const handle = window.requestIdleCallback(run, { timeout: 3000 });
+      return () => window.cancelIdleCallback(handle);
+    }
+    const timer = setTimeout(run, 1500);
+    return () => clearTimeout(timer);
+  }, [activeTab, spotId]);
   // Best travel season — surfaced on both tabs (a line in the Info identity
   // column, a jump link in the Daten header). Best-effort; null hides it.
   const bestSeason = useSpotBestSeason(spot?.id);
@@ -171,7 +183,6 @@ export default function SpotDetail() {
 
   // All from the backend record — no synthetic data.
   const facilities = facilitiesFromMap(spot.facilities);
-  const [regionPart, country] = spot.region.split(",").map((p) => p.trim());
 
   // Most recent posts first — the teaser tile shows the newest one, the
   // "mehr" overlay shows up to three.
@@ -190,18 +201,9 @@ export default function SpotDetail() {
         width="body"
         mobileSpotControls
         left={
-          <button
-            type="button"
-            onClick={goBack}
-            aria-label="Zurück"
-            data-page-back
-            className="back-glyph back-glyph-on-photo pointer-events-auto"
-          >
-            <ChevronDownIcon width={24} height={24} className="rotate-90" />
-          </button>
+          <PinnedPageBack onBack={goBack} photoSelector=".spot-detail-page main > :first-child" />
         }
       />
-      <ScrollBackButton onBack={goBack} />
 
       <main className="min-w-0 max-w-full">
         {/* Clean hero image — the spot identity (name/region/score) now lives in
@@ -223,15 +225,10 @@ export default function SpotDetail() {
             tokens now size it directly, in whole pixels. */}
         <div
           className="relative [overflow-anchor:none] motion-safe:transition-colors motion-safe:duration-slow"
-          style={{ backgroundColor: activeTab === "daten" ? "var(--sw-daten-page)" : "var(--sw-page)" }}
+          style={{ backgroundColor: "var(--sw-page)" }}
         >
-        {/* On the Daten tab the shared tab strip is scoped dark so it meets the
-            dark instrument page below with no light seam (Figma Frame 67). */}
-        {tabs.length > 0 && (
-          <div className={activeTab === "daten" ? "daten-dark" : undefined}>
-            <SpotTabs tabs={tabs} />
-          </div>
-        )}
+        {/* Info and Daten share one page ground since 2026-11-25. */}
+        {tabs.length > 0 && <SpotTabs tabs={tabs} />}
 
         <AnimatePresence
           initial={false}
@@ -268,36 +265,8 @@ export default function SpotDetail() {
                       : "self-stretch lg:h-[var(--spot-gallery-height,630px)] lg:self-start"
                   }`}
                 >
-                  {/* Spot identity: the name, then where it is, on one line.
-                      Region and country used to sit above the title as a
-                      breadcrumb, which read as navigation the page does not
-                      have. Beside the name they read as what they are — the
-                      rest of the spot's address. They wrap to their own line
-                      on a narrow column instead of squeezing the name. */}
-                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                    <h1 className="text-heading font-semibold text-balance text-ink sm:text-heading-lg">
-                      {spot.name}
-                      {/* Origin mark trails the title on the same baseline; the
-                          written-out sentence sits at the foot of this tab. */}
-                      <SpotOriginMark origin={spot.origin} className="ml-2 align-baseline" />
-                    </h1>
-                    {(regionPart || country) && (
-                      <p className="text-ui leading-tight text-ink-soft/80">
-                        {regionPart && (
-                          <Link
-                            to={`/region/${regionSlug(spot.region)}`}
-                            className="font-medium text-ink transition-opacity hover:opacity-70 hover:underline"
-                          >
-                            {regionPart}
-                          </Link>
-                        )}
-                        {country && regionPart && (
-                          <span className="mx-1.5 text-ink-soft/50">·</span>
-                        )}
-                        {country && <span>{country}</span>}
-                      </p>
-                    )}
-                  </div>
+                  {/* Spot identity — shared with the Daten tab. */}
+                  <SpotTitle spot={spot} />
                   <SpotEditorialClassification spot={spot} />
 
                   {/* Sports are plain label + white check, not

@@ -58,9 +58,9 @@ export function fieldUrlSearch(search: string, patch: Partial<FieldUrlState>): s
   return `?${query}`;
 }
 
-/** A link into the weather map, pre-framed on a place. `toggle: false` locks
- *  it to the wind field (no Spots/Wind switch) — what the spot Daten page and
- *  the results page both open. */
+/** A link into the weather map, pre-framed on a place, opening on the wind.
+ *  `toggle: false` leaves out the Spots half: the switch offers Wind and
+ *  Wellen only — what the spot Daten page and the results page open. */
 export function windMapHref(center: [number, number], zoom: number, options: { toggle?: boolean } = {}): string {
   const query = new URLSearchParams({
     mode: "wind",

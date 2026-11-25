@@ -21,12 +21,24 @@ export interface SpotTab {
  * medium-weight copy of the label is rendered underneath to reserve its
  * width, so that weight step never shifts layout.
  */
-export default function SpotTabs({ tabs }: { tabs: SpotTab[] }) {
+export default function SpotTabs({
+  tabs,
+  activeId,
+  label = "Spot-Ansicht",
+  className = "pt-12",
+}: {
+  tabs: SpotTab[];
+  /** Which tab is active when the tabs differ by query, not by path (the
+   *  search results' two views). Defaults to matching the path. */
+  activeId?: string;
+  label?: string;
+  className?: string;
+}) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const activeIndex = Math.max(
     0,
-    tabs.findIndex((t) => t.href === pathname)
+    activeId != null ? tabs.findIndex((t) => t.id === activeId) : tabs.findIndex((t) => t.href === pathname)
   );
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -46,10 +58,10 @@ export default function SpotTabs({ tabs }: { tabs: SpotTab[] }) {
   };
 
   return (
-    <div className="bg-page pt-12 transition-colors duration-slow motion-reduce:transition-none">
+    <div className={`bg-page transition-colors duration-slow motion-reduce:transition-none ${className}`}>
       <div
         role="tablist"
-        aria-label="Spot-Ansicht"
+        aria-label={label}
         className="mx-auto flex max-w-page justify-center px-4 sm:px-8"
       >
         {tabs.map((tab, i) => {

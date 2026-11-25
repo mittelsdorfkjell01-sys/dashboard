@@ -1,10 +1,10 @@
+import Segmented from "../ui/Segmented";
 import { useEffect, useMemo, useState, type KeyboardEvent, type PointerEvent } from "react";
 import type { WindClimatologyRead, WindClimatologySection, WindWindowKey } from "../../lib/api";
 import { useWindClimatology } from "../../lib/hooks";
 import { InfoIcon } from "../../lib/icons";
 import type { Spot } from "../../lib/types";
 import { windColor } from "../../lib/windScale";
-import Segmented from "../ui/Segmented";
 import YearRangeSlider from "./YearRangeSlider";
 
 type YearWindow = { fromYear: number; toYear: number };
@@ -175,39 +175,60 @@ export default function Climatology({ spot }: { spot: Spot }) {
 
   // Flush to the content column like the meteogram — no card padding of its own.
   return <div>
+    {/* Controls (chosen 2026-11-24, "Legende als Auswahl"): reading and unit
+        as two small symbol toggles beside the heading; the wind windows as
+        colour chips above the chart — the legend is the choice. */}
     <div className="flex flex-wrap items-center justify-between gap-3">
       <h3 className="text-lead font-semibold tracking-tight text-ink">Windmonate</h3>
-      <Segmented<View>
-        label="Ansicht"
-        value={view}
-        onChange={(next) => { setView(next); writeSession("wind-view", next); }}
-        options={[{ id: "raster", label: "Raster" }, { id: "kurve", label: "Kurve" }]}
-      />
+      <div className="flex items-center gap-2">
+        <IconToggle<View>
+          label="Ansicht"
+          value={view}
+          onChange={(next) => { setView(next); writeSession("wind-view", next); }}
+          options={[
+            { id: "raster", label: "Raster", icon: <RasterIcon /> },
+            { id: "kurve", label: "Kurve", icon: <CurveIcon /> },
+          ]}
+        />
+        <IconToggle<Unit>
+          label="Einheit"
+          value={unit}
+          onChange={(next) => { setUnit(next); writeSession("wind-unit", next); }}
+          options={[
+            { id: "percent", label: "Prozent der Tageslichtstunden", icon: <span className="font-figures text-caption font-bold">%</span> },
+            { id: "hours", label: "Stunden pro Tag", icon: <span className="font-figures text-caption font-bold">h</span> },
+          ]}
+        />
+      </div>
     </div>
-
-    <div className="mt-4 flex min-w-0 flex-wrap items-center gap-2">
-      <Segmented<WindWindowKey>
-        label="Windfenster"
-        value={windowKey}
-        onChange={(next) => { setWindowKey(next); writeSession("wind-window", next); }}
-        options={WINDOWS.map(([key, text]) => ({
-          id: key,
-          ariaLabel: text,
-          label: (
-            <span className="inline-flex items-center gap-2">
-              <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-[2px]" style={{ background: WINDOW_HEX[key] }} />
+    {/* All four windows always in one row: equal shares of the width, the
+        "kn" dropped on narrow screens so they fit side by side on a phone. */}
+    <div className="mt-3 grid grid-cols-4 gap-1.5" role="group" aria-label="Windfenster">
+      {WINDOWS.map(([key, text]) => {
+        const on = key === windowKey;
+        return (
+          <button
+            key={key}
+            type="button"
+            aria-pressed={on}
+            aria-label={text}
+            onClick={() => { setWindowKey(key); writeSession("wind-window", key); }}
+            className={`relative inline-flex min-h-7 min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-1.5 text-caption sm:px-2.5 font-medium transition-[color,background-color,box-shadow] duration-fast before:absolute before:inset-x-0 before:-inset-y-2 before:content-[''] motion-reduce:transition-none ${
+              on ? "text-ink" : "text-muted hover:text-ink"
+            }`}
+            style={{
+              boxShadow: `inset 0 0 0 ${on ? "1.5px" : "1px"} ${on ? WINDOW_HEX[key] : "var(--sw-line)"}`,
+              background: on ? `color-mix(in oklab, ${WINDOW_HEX[key]} 18%, transparent)` : "transparent",
+            }}
+          >
+            <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-[2px]" style={{ background: WINDOW_HEX[key] }} />
+            <span aria-hidden="true">
               {text.replace(" kn", "")}
-              <span className="hidden sm:inline">&nbsp;kn</span>
+              <span className="hidden sm:inline"> kn</span>
             </span>
-          ),
-        }))}
-      />
-      <Segmented<Unit>
-        label="Einheit"
-        value={unit}
-        onChange={(next) => { setUnit(next); writeSession("wind-unit", next); }}
-        options={[{ id: "percent", label: "%", ariaLabel: "Prozent der Tageslichtstunden" }, { id: "hours", label: "h/Tag", ariaLabel: "Stunden pro Tag" }]}
-      />
+          </button>
+        );
+      })}
     </div>
     {active.refresh_status && <p className="mt-3 text-caption text-muted">Eine aktualisierte Berechnung läuft; angezeigt bleibt die letzte vollständige Version.</p>}
 
@@ -231,12 +252,11 @@ export default function Climatology({ spot }: { spot: Spot }) {
       )}
     </div>
 
+    {/* The selected value is read in the chart itself (cell number, or the
+        moving label on the curve's axis); screen readers get it here. */}
     {readout && (
-      <p className="mt-3 min-h-6 text-data-value text-ink-soft" aria-live="polite">
-        <span className="font-semibold text-ink">{readout.when}</span>
-        {" · "}{selectedLabel}{" · "}
-        <span className="font-figures font-semibold tabular-nums text-ink">{readout.percent}</span> der Tageslichtstunden
-        {" · "}<span className="font-figures tabular-nums">{readout.hours}</span> pro Tag
+      <p className="sr-only" aria-live="polite">
+        {readout.when}, {selectedLabel}: {readout.percent} der Tageslichtstunden, {readout.hours} pro Tag
       </p>
     )}
 
@@ -401,18 +421,32 @@ function Curve({
   const y = (v: number) => (1 - v / scaleMax) * 100; // percent of height
 
   // Line and area, broken where a quarter has no value.
+  // A light smoothing of the drawn line only (neighbours weighted ¼ · ½ · ¼),
+  // so single quarter-month spikes don't read as needles. Every number shown
+  // — axis reading, high, low — stays the exact value; the markers sit on the
+  // drawn line.
+  const drawn = values.map((v, i) => {
+    if (v == null) return null;
+    const prev = values[i - 1] ?? v;
+    const next = values[i + 1] ?? v;
+    return prev * 0.25 + v * 0.5 + next * 0.25;
+  });
+  const yDrawn = (i: number) => y(drawn[i] ?? values[i] ?? 0);
   const runs: [number, number][][] = [];
   values.forEach((v, i) => {
     if (v == null) return;
-    const point: [number, number] = [(x(i) / 100) * CURVE_W, (y(v) / 100) * CURVE_H];
+    const point: [number, number] = [(x(i) / 100) * CURVE_W, (yDrawn(i) / 100) * CURVE_H];
     const last = runs[runs.length - 1];
     if (last && values[i - 1] != null) last.push(point);
     else runs.push([point]);
   });
-  const line = runs.map((run) => run.map(([px, py], i) => `${i ? "L" : "M"}${px.toFixed(1)} ${py.toFixed(1)}`).join(" ")).join(" ");
+  // Drawn as a smooth monotone curve through the exact values (2026-11-24):
+  // the corners round off, but the line never overshoots a value and the
+  // dots and readings still sit on it.
+  const line = runs.map(smoothPath).join(" ");
   const area = runs
     .filter((run) => run.length > 1)
-    .map((run) => `${run.map(([px, py], i) => `${i ? "L" : "M"}${px.toFixed(1)} ${py.toFixed(1)}`).join(" ")} L${run[run.length - 1][0].toFixed(1)} ${CURVE_H} L${run[0][0].toFixed(1)} ${CURVE_H} Z`)
+    .map((run) => `${smoothPath(run)} L${run[run.length - 1][0].toFixed(1)} ${CURVE_H} L${run[0][0].toFixed(1)} ${CURVE_H} Z`)
     .join(" ");
 
   const hi = valid.reduce((best, p) => (p[0] > best[0] ? p : best), valid[0] ?? [0, 0]);
@@ -435,7 +469,7 @@ function Curve({
   const currentValue = values[current];
   const annotation = (index: number, value: number, label: string, above: boolean) => {
     const left = x(index);
-    const top = y(value);
+    const top = yDrawn(index);
     const alignRight = left > 55;
     return (
       <span
@@ -464,17 +498,43 @@ function Curve({
         onPointerDown={(event) => onPick(indexAt(event))}
         onPointerMove={(event) => { if (event.pointerType === "mouse" || event.buttons) onPick(indexAt(event)); }}
         onKeyDown={onKeyDown}
-        className="relative ml-9 h-56 touch-pan-y"
+        className="relative h-56 touch-pan-y"
       >
-        {axis.map((v, i) => (
-          <div key={i} className="absolute inset-x-0 border-t border-line" style={{ top: `${(1 - i / 2) * 100}%` }} aria-hidden="true">
-            <span className="absolute -left-9 -top-2.5 w-7 text-right font-figures text-data-caption tabular-nums text-muted">{axisLabel(v)}</span>
-          </div>
+        {axis.map((_, i) => (
+          <div key={i} className="absolute inset-x-0 border-t border-line" style={{ top: `${(1 - i / 2) * 100}%` }} aria-hidden="true" />
         ))}
         <svg viewBox={`0 0 ${CURVE_W} ${CURVE_H}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible" aria-hidden="true">
           <path d={area} fill={hex} fillOpacity={0.16} />
           <path d={line} fill="none" stroke={hex} strokeWidth={2.5} vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" />
         </svg>
+        {/* Axis values sit on their own gridline inside the plot (chosen
+            2026-11-24, "Werte in der Fläche"): no gutter, the curve gets the
+            full width. A small page-coloured ground keeps them legible over
+            the curve; the top value carries the unit. A value steps aside
+            while the moving reading passes over it. */}
+        {axis.map((v, i) => {
+          const near = currentValue != null && Math.abs(y(v) - yDrawn(current)) < 12;
+          return (
+            <span
+              key={`label-${i}`}
+              aria-hidden="true"
+              className={`pointer-events-none absolute left-0 bg-page pr-1 font-figures text-data-caption leading-none tabular-nums text-muted transition-opacity duration-fast ${near ? "opacity-0" : "opacity-100"}`}
+              style={{ top: `calc(${(1 - i / 2) * 100}% - ${i === 0 ? "0.875rem" : "1rem"})` }}
+            >
+              {axisLabel(v)}{i === axis.length - 1 ? (unit === "hours" ? " h" : " %") : ""}
+            </span>
+          );
+        })}
+        {/* The value under the cursor, riding the left edge at its height. */}
+        {currentValue != null && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute left-0 rounded-[6px] bg-ink px-1.5 py-0.5 font-figures text-data-caption font-bold leading-none tabular-nums text-page"
+            style={{ top: `calc(${yDrawn(current)}% - 0.6rem)` }}
+          >
+            {unit === "hours" ? currentValue.toFixed(1).replace(".", ",") : Math.round(currentValue)}
+          </span>
+        )}
         {today >= 0 && (
           <div className="pointer-events-none absolute inset-y-0 border-l border-dashed border-muted" style={{ left: `${x(today)}%` }} aria-hidden="true">
             <span className={`absolute -top-5 whitespace-nowrap text-data-caption text-muted ${x(today) > 85 ? "right-1" : "left-1"}`}>heute</span>
@@ -482,8 +542,8 @@ function Curve({
         )}
         {valid.length > 0 && (
           <div aria-hidden="true">
-            <span className="pointer-events-none absolute -ml-[4.5px] -mt-[4.5px] h-[9px] w-[9px] rounded-full bg-page ring-2 ring-ink" style={{ left: `${x(hi[1])}%`, top: `${y(hi[0])}%` }} />
-            <span className="pointer-events-none absolute -ml-[4.5px] -mt-[4.5px] h-[9px] w-[9px] rounded-full bg-page ring-2 ring-ink" style={{ left: `${x(lo[1])}%`, top: `${y(lo[0])}%` }} />
+            <span className="pointer-events-none absolute -ml-[4.5px] -mt-[4.5px] h-[9px] w-[9px] rounded-full bg-page ring-2 ring-ink" style={{ left: `${x(hi[1])}%`, top: `${yDrawn(hi[1])}%` }} />
+            <span className="pointer-events-none absolute -ml-[4.5px] -mt-[4.5px] h-[9px] w-[9px] rounded-full bg-page ring-2 ring-ink" style={{ left: `${x(lo[1])}%`, top: `${yDrawn(lo[1])}%` }} />
             {annotation(hi[1], hi[0], "Höchstwert", true)}
             {hi[1] !== lo[1] && annotation(lo[1], lo[0], "Tiefstwert", false)}
           </div>
@@ -493,11 +553,11 @@ function Curve({
           <span
             aria-hidden="true"
             className="pointer-events-none absolute -ml-[4.5px] -mt-[4.5px] h-[9px] w-[9px] rounded-full bg-page ring-2 ring-ink"
-            style={{ left: `${x(current)}%`, top: `${y(currentValue)}%` }}
+            style={{ left: `${x(current)}%`, top: `${yDrawn(current)}%` }}
           />
         )}
       </div>
-      <div className="ml-9 grid grid-cols-12 text-micro text-muted sm:text-data-caption" aria-hidden="true">
+      <div className="grid grid-cols-12 text-micro text-muted sm:text-data-caption" aria-hidden="true">
         {MONTHS.map((month) => <span key={month} className="border-l border-line pl-0.5 sm:pl-1">{month}</span>)}
       </div>
     </div>
@@ -537,4 +597,92 @@ function ClimatologyEmptyState({ state, onRetry }: {
       </div>
     </div>
   );
+}
+
+/** Two or more symbol buttons in a small band tray; the pressed one is the
+ *  ink chip. 28px high, with the tap target extended to 44px. */
+// The Windmonate symbol switches: the site's small Segmented switch with a
+// symbol per option (2026-11-25: one switch for the whole Daten tab, with the
+// language switch's motion; until then a tray without a sliding surface).
+function IconToggle<T extends string>({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: T;
+  onChange: (next: T) => void;
+  options: { id: T; label: string; icon: React.ReactNode }[];
+}) {
+  return (
+    <Segmented
+      size="sm"
+      label={label}
+      value={value}
+      onChange={onChange}
+      options={options.map((option) => ({ id: option.id, label: option.icon, ariaLabel: option.label, title: option.label }))}
+    />
+  );
+}
+
+function RasterIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <rect x="3" y="5" width="5" height="5" rx="1" /><rect x="10" y="5" width="5" height="5" rx="1" /><rect x="17" y="5" width="4" height="5" rx="1" />
+      <rect x="3" y="13" width="5" height="5" rx="1" /><rect x="10" y="13" width="5" height="5" rx="1" /><rect x="17" y="13" width="4" height="5" rx="1" />
+    </svg>
+  );
+}
+
+function CurveIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+      <path d="M3 17c3-6 5-9 8-6s5 2 10-6" />
+    </svg>
+  );
+}
+
+/**
+ * Monotone cubic path (Fritsch–Carlson) through the points: rounded corners
+ * without the overshoot a plain spline would add above a peak or below a dip.
+ */
+function smoothPath(points: [number, number][]): string {
+  const n = points.length;
+  if (n === 0) return "";
+  if (n < 3) return points.map(([px, py], i) => `${i ? "L" : "M"}${px.toFixed(1)} ${py.toFixed(1)}`).join(" ");
+  const dx: number[] = [];
+  const slope: number[] = [];
+  for (let i = 0; i < n - 1; i += 1) {
+    dx.push(points[i + 1][0] - points[i][0]);
+    slope.push((points[i + 1][1] - points[i][1]) / (dx[i] || 1));
+  }
+  const tangent: number[] = [slope[0]];
+  for (let i = 1; i < n - 1; i += 1) {
+    tangent.push(slope[i - 1] * slope[i] <= 0 ? 0 : (slope[i - 1] + slope[i]) / 2);
+  }
+  tangent.push(slope[n - 2]);
+  for (let i = 0; i < n - 1; i += 1) {
+    if (slope[i] === 0) {
+      tangent[i] = 0;
+      tangent[i + 1] = 0;
+      continue;
+    }
+    const a = tangent[i] / slope[i];
+    const b = tangent[i + 1] / slope[i];
+    const h = a * a + b * b;
+    if (h > 9) {
+      const t = 3 / Math.sqrt(h);
+      tangent[i] = t * a * slope[i];
+      tangent[i + 1] = t * b * slope[i];
+    }
+  }
+  let d = `M${points[0][0].toFixed(1)} ${points[0][1].toFixed(1)}`;
+  for (let i = 0; i < n - 1; i += 1) {
+    const [x0, y0] = points[i];
+    const [x1, y1] = points[i + 1];
+    const third = dx[i] / 3;
+    d += ` C${(x0 + third).toFixed(1)} ${(y0 + tangent[i] * third).toFixed(1)} ${(x1 - third).toFixed(1)} ${(y1 - tangent[i + 1] * third).toFixed(1)} ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+  }
+  return d;
 }

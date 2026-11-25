@@ -2,6 +2,9 @@ import { useLayoutEffect, useRef, type RefObject } from "react";
 
 const LEAD = "var(--sw-dur-base) var(--sw-ease)";
 const TRAIL = "var(--sw-dur-base) var(--sw-ease) 70ms";
+// The switch thumb's motion (Switch.tsx, the menu's theme and language
+// switches): one travel of 240ms that overshoots a little and settles.
+const SWITCH = "240ms cubic-bezier(0.32, 1.6, 0.55, 1)";
 
 /**
  * Drives the active-segment surface of a segmented control (chosen
@@ -18,6 +21,10 @@ export function useStretchIndicator(
   trayRef: RefObject<HTMLElement>,
   indicatorRef: RefObject<HTMLElement>,
   activeKey: string,
+  /** "stretch" (default): leading edge first, trailing edge 70ms later.
+   *  "switch": both edges together on the switch curve, like a toggle thumb
+   *  (2026-11-25, the Daten tab's small switches). */
+  motion: "stretch" | "switch" = "stretch",
 ): void {
   const last = useRef<{ left: number; right: number } | null>(null);
 
@@ -41,6 +48,8 @@ export function useStretchIndicator(
       const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       if (!animate || !previous || reduce) {
         indicator.style.transition = "none";
+      } else if (motion === "switch") {
+        indicator.style.transition = `left ${SWITCH}, right ${SWITCH}, margin var(--sw-dur-fast) var(--sw-ease)`;
       } else if (left > previous.left) {
         indicator.style.transition = `right ${LEAD}, left ${TRAIL}`;
       } else {
@@ -61,5 +70,5 @@ export function useStretchIndicator(
     observer.observe(tray);
     Array.from(tray.children).forEach((child) => observer.observe(child));
     return () => observer.disconnect();
-  }, [trayRef, indicatorRef, activeKey]);
+  }, [trayRef, indicatorRef, activeKey, motion]);
 }

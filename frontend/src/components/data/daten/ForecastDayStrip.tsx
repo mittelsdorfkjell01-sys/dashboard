@@ -1,55 +1,46 @@
-import { useMemo, useRef } from "react";
-import { useStretchIndicator } from "../../../lib/useStretchIndicator";
+import { useMemo } from "react";
 import type { NormalizedForecastDay, NormalizedForecastHour, NormalizedForecastSeries } from "../../../lib/forecastNormalization";
 import { isSpotForecastDisplayHour, spotForecastDayHours } from "../../../lib/spotForecastWindow";
 import { windColor } from "../../../lib/windScale";
-import { buildMeteogramModel } from "../meteogramModel";
 import { useSpotDataScope } from "../../../state/SpotDataScope";
+import { formatWave, formatWind } from "../../../lib/units";
+import { useOptionalUnits } from "../../../context/PrefsContext";
+import { headlineWaveM } from "../../../lib/waveReading";
+import type { DatenFocus } from "./datenFocus";
 import { scrollMeteogramToDay } from "./scrollMeteogramToDay";
 
 const WEEKDAY = new Intl.DateTimeFormat("de-DE", { weekday: "short", timeZone: "UTC" });
 
-// Tile + bar geometry from Figma node 510-5 (Frame 72). Each day is a FILLED
-// rounded rectangle (no stroke) holding exactly 8 wind bars. All ten days stay
-// visible: two rows of five on compact screens and one row of ten on desktop.
-// Bars flex to fill each tile; only their count, gaps and height are fixed.
-const BAR_HOURS = [6, 8, 10, 12, 14, 16, 18, 20]; // 8 fixed local-hour slots (06..20)
-const BAR_GAP = 2; // gap between bars (px)
-const BAR_BAND_H = 30; // bar-band / max bar height (px)
-const TILE_H = 52;
-const TILE_GAP = 2; // gap between day tiles (px)
+// One bar per local hour of the spot window, 06 to 20 — fifteen per day.
+const BAR_HOURS = Array.from({ length: 15 }, (_, i) => 6 + i);
+const BAND_H = 42; // bar band height (px) — a third lower since 2026-11-25
 const MAX_DAYS = 10;
 
 /**
- * Compact multi-day navigator sitting above the meteogram (Figma node 510-5).
- * All forecast days (up to ten) are shown as small filled tiles spanning the
- * body width, each with a weekday (left) + date (right) caption and a fixed
- * eight-bar wind profile, so days compare directly at a glance. For a day
- * already in progress the elapsed hours are drawn as normal bars (not dropped),
- * so today reads the same as any other day. Clicking a day scrolls the
- * meteogram to it and selects its first hour, like Windfinder's day tabs. Bar
- * heights share the meteogram's wind scale (expanded only if a far-out day
- * exceeds it, so nothing overflows); colours come from the shared wind scale.
+ * Ten-day overview above the meteogram (chosen 2026-11-24, "Durchgehendes
+ * Windband"): every hour of the spot window for all ten days as one bar
+ * band, the days as columns above it with weekday and date. Read across, it
+ * shows how the wind builds and drops over several days, not just inside
+ * one. Bars use the site's wind colours on the band's own scale.
+ * A tap on a day scrolls the meteogram to it and selects its first hour; the
+ * selected day is tinted.
  */
-export default function ForecastDayStrip({ forecast }: { forecast: NormalizedForecastSeries }) {
-  const { selectedForecast, setSelectedAtUtc } = useSpotDataScope();
-  const model = useMemo(() => buildMeteogramModel(forecast, isSpotForecastDisplayHour), [forecast]);
+export default function ForecastDayStrip({ forecast, focus = "wind" }: { forecast: NormalizedForecastSeries; focus?: DatenFocus }) {
+  const { selectedForecast, setSelectedAtUtc, windUnit } = useSpotDataScope();
+  const units = useOptionalUnits();
+  const waveFocus = focus === "wave";
   const days = useMemo(() => forecast.days.slice(0, MAX_DAYS), [forecast]);
-  const dayBars = useMemo(() => days.map((day) => miniBars(day.hours)), [days]);
-  // The selected day carries a ring that stretches over to the next pick
-  // (same motion as the segmented controls, see useStretchIndicator).
-  const trayRef = useRef<HTMLDivElement>(null);
-  const ringRef = useRef<HTMLSpanElement>(null);
-  useStretchIndicator(trayRef, ringRef, selectedForecast?.localDate ?? "");
+  // Wave focus (2026-11-25): the same band shows the total wave per hour.
+  const dayBars = useMemo(
+    () => days.map((day) => hourlyBars(day.hours, waveFocus ? headlineWaveM : (hour) => hour.wind)),
+    [days, waveFocus],
+  );
   if (!days.length) return null;
 
-  // Shared meteogram scale, widened only if a day's bar exceeds it so bars never
-  // overflow the band. Stays identical to the meteogram when nothing exceeds it.
-  const windMax = Math.max(
-    model.scales.wind.max,
-    1,
-    ...dayBars.flat().filter((wind): wind is number => wind != null),
-  );
+  // The band scales to its own strongest hour (at least 10 kn), so a calm
+  // week still fills the height and the ten days stay comparable to each
+  // other. (Sharing the meteogram's gust-inclusive scale left the bars flat.)
+  const windMax = Math.max(waveFocus ? 1 : 10, ...dayBars.flat().filter((wind): wind is number => wind != null));
 
   const selectDay = (day: NormalizedForecastDay) => {
     const firstHour = spotForecastDayHours(day)[0];
@@ -58,26 +49,31 @@ export default function ForecastDayStrip({ forecast }: { forecast: NormalizedFor
     scrollMeteogramToDay(day.local_date ?? day.date);
   };
 
+  const selectedIndex = days.findIndex((day) => (day.local_date ?? day.date) === selectedForecast?.localDate);
+
   return (
     <div
-      ref={trayRef}
-      className="relative flex snap-x snap-mandatory overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-10 lg:overflow-visible"
-      style={{ gap: TILE_GAP }}
+      className="relative grid grid-cols-10"
       role="group"
       aria-label="Tagesübersicht — Tag im Stundenforecast anzeigen"
     >
+      {/* One tint for the chosen day that glides to the next choice (200 ms,
+          chosen 2026-11-25, "Markierung gleitet") instead of jumping. */}
       <span
-        ref={ringRef}
         aria-hidden="true"
-        className="pointer-events-none absolute top-0 z-[1] rounded-card opacity-0 ring-2 ring-inset ring-teal"
-        style={{ height: TILE_H }}
+        className={`pointer-events-none absolute inset-y-0 left-0 w-[10%] bg-teal/15 transition-[transform,opacity] duration-base ease-brand motion-reduce:transition-none ${
+          selectedIndex < 0 ? "opacity-0" : "opacity-100"
+        }`}
+        style={{ transform: `translateX(${Math.max(0, selectedIndex) * 100}%)` }}
       />
       {days.map((day, index) => {
         const date = day.local_date ?? day.date;
         const d = new Date(`${date}T12:00:00Z`);
-        const weekday = WEEKDAY.format(d).replace(".", "").toUpperCase();
+        const weekday = WEEKDAY.format(d).replace(".", "");
         const dayMonth = `${String(d.getUTCDate()).padStart(2, "0")}.${String(d.getUTCMonth() + 1).padStart(2, "0")}.`;
+        const dayOfMonth = `${String(d.getUTCDate()).padStart(2, "0")}.`;
         const bars = dayBars[index];
+        const peak = bars.reduce<number | null>((max, w) => (w == null ? max : max == null ? w : Math.max(max, w)), null);
         const selected = selectedForecast?.localDate === date;
 
         return (
@@ -85,25 +81,25 @@ export default function ForecastDayStrip({ forecast }: { forecast: NormalizedFor
             key={date}
             type="button"
             aria-pressed={selected}
-            aria-label={`${weekday} ${dayMonth} — im Stundenforecast anzeigen`}
+            aria-label={`${weekday} ${dayMonth}${peak == null ? "" : `, bis ${waveFocus ? formatWave(peak, units.wave) : formatWind(peak, windUnit)}`} — im Stundenforecast anzeigen`}
             title="Im Stundenforecast anzeigen"
             onClick={() => selectDay(day)}
-            style={{ height: TILE_H }}
-            className="flex min-w-0 shrink-0 basis-[calc((100%-8px)/5)] snap-start flex-col gap-1 rounded-card bg-[#0E141B] px-[5px] pb-1 pt-[3px] transition-colors hover:bg-line-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal lg:basis-auto"
+            className="relative flex min-w-0 flex-col border-l border-line pb-1 pl-1 pr-px text-left transition-colors duration-fast first:border-l-0 hover:bg-line-soft focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-teal motion-reduce:transition-none sm:pl-1.5"
           >
-            <span className="flex items-baseline justify-between gap-1 whitespace-nowrap text-micro leading-none tabular-nums max-[359px]:flex-col max-[359px]:items-start max-[359px]:gap-0 sm:text-caption xl:text-ui">
-              <span className="font-medium text-ink">{weekday}</span>
-              <span className="text-muted">{dayMonth}</span>
+            <span className="block text-caption font-semibold leading-tight text-ink sm:text-ui">{weekday}</span>
+            <span className="block text-micro leading-tight tabular-nums text-muted sm:text-caption">
+              <span className="sm:hidden">{dayOfMonth}</span>
+              <span className="hidden sm:inline">{dayMonth}</span>
             </span>
-            <span className="flex items-end" style={{ height: BAR_BAND_H, gap: BAR_GAP }} aria-hidden="true">
+            <span className="mt-1.5 grid items-end" style={{ height: BAND_H, gridTemplateColumns: `repeat(${BAR_HOURS.length}, minmax(0, 1fr))` }} aria-hidden="true">
               {bars.map((wind, i) => (
                 <span
                   key={i}
                   data-wind-bar
-                  className="min-w-0 flex-1 rounded-card"
+                  className="mx-[0.5px] rounded-t-[1px]"
                   style={{
-                    height: wind == null ? 3 : Math.max(3, (wind / windMax) * BAR_BAND_H),
-                    background: wind == null ? "var(--sw-line)" : windColor(wind),
+                    height: wind == null ? 2 : Math.max(3, (wind / windMax) * BAND_H),
+                    background: wind == null ? "var(--sw-line)" : waveFocus ? "var(--sw-data-swell)" : windColor(wind),
                   }}
                 />
               ))}
@@ -115,16 +111,46 @@ export default function ForecastDayStrip({ forecast }: { forecast: NormalizedFor
   );
 }
 
-// Exactly eight bars per day — one per fixed local-hour slot (06, 08, … 20)
-// inside the spot display window — so every day shows the same 8-bar profile.
-// A day already in progress keeps its elapsed hours (they are real forecast
-// slots, not dropped), and any slot without data renders as a faint stub rather
-// than shrinking the tile, keeping all bars horizontally aligned across days.
-function miniBars(hours: NormalizedForecastHour[]): (number | null)[] {
-  const byHour = new Map<number, number>();
-  for (const hour of hours) {
-    if (!isSpotForecastDisplayHour(hour) || hour.wind == null) continue;
-    if (!byHour.has(hour.localHour)) byHour.set(hour.localHour, hour.wind);
-  }
-  return BAR_HOURS.map((hr) => (byHour.has(hr) ? byHour.get(hr)! : null));
+/**
+ * Loading placeholder in the band's final size: the same ten columns, the
+ * same two text lines and the same bar height, so the band replaces it
+ * without moving the meteogram below.
+ */
+export function ForecastDayStripSkeleton() {
+  return (
+    <div className="grid grid-cols-10" aria-hidden="true">
+      {Array.from({ length: MAX_DAYS }).map((_, index) => (
+        <div key={index} className="flex min-w-0 flex-col border-l border-line pb-1 pl-1 pr-px first:border-l-0 sm:pl-1.5">
+          <span className="block text-caption font-semibold leading-tight text-transparent sm:text-ui">Mo</span>
+          <span className="block text-micro leading-tight text-transparent sm:text-caption">01.</span>
+          <span className="mt-1.5 flex animate-pulse items-end gap-px motion-reduce:animate-none" style={{ height: BAND_H }}>
+            {BAR_HOURS.map((hour) => (
+              <span key={hour} className="flex-1 rounded-t-[1px] bg-line" style={{ height: 10 + ((hour * 7 + index * 3) % 9) * 3 }} />
+            ))}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// One value per local hour 06–20. Forecasts thin out to 3- or 6-hourly steps
+// after the first days; each slot then carries the latest earlier reading of
+// the same day (or the first later one before the day's first reading), so a
+// coarse day still reads as a continuous band instead of a comb. A day with no
+// hourly data at all (trend-only) renders as faint stubs.
+function hourlyBars(hours: NormalizedForecastHour[], read: (hour: NormalizedForecastHour) => number | null | undefined): (number | null)[] {
+  const known = hours
+    .filter((hour) => isSpotForecastDisplayHour(hour) && read(hour) != null)
+    .map((hour) => ({ h: hour.localHour, wind: read(hour) as number }))
+    .sort((a, b) => a.h - b.h);
+  if (!known.length) return BAR_HOURS.map(() => null);
+  return BAR_HOURS.map((slot) => {
+    let pick = known[0];
+    for (const reading of known) {
+      if (reading.h <= slot) pick = reading;
+      else break;
+    }
+    return pick.wind;
+  });
 }
